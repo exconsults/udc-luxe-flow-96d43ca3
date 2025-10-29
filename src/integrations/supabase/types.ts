@@ -14,16 +14,231 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      addresses: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          state: string
+          street_address: string
+          updated_at: string
+          user_id: string
+          zip_code: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label: string
+          state: string
+          street_address: string
+          updated_at?: string
+          user_id: string
+          zip_code: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          state?: string
+          street_address?: string
+          updated_at?: string
+          user_id?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string
+          delivery_address_id: string | null
+          delivery_date: string | null
+          delivery_time: string | null
+          driver_id: string | null
+          id: string
+          is_synced: boolean
+          item_count: number | null
+          order_number: string
+          pickup_address_id: string | null
+          pickup_date: string | null
+          pickup_time: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          special_instructions: string | null
+          staff_notes: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          tax: number
+          total: number
+          updated_at: string
+          user_id: string
+          weight_lbs: number | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_address_id?: string | null
+          delivery_date?: string | null
+          delivery_time?: string | null
+          driver_id?: string | null
+          id?: string
+          is_synced?: boolean
+          item_count?: number | null
+          order_number: string
+          pickup_address_id?: string | null
+          pickup_date?: string | null
+          pickup_time?: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          special_instructions?: string | null
+          staff_notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+          user_id: string
+          weight_lbs?: number | null
+        }
+        Update: {
+          created_at?: string
+          delivery_address_id?: string | null
+          delivery_date?: string | null
+          delivery_time?: string | null
+          driver_id?: string | null
+          id?: string
+          is_synced?: boolean
+          item_count?: number | null
+          order_number?: string
+          pickup_address_id?: string | null
+          pickup_date?: string | null
+          pickup_time?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          special_instructions?: string | null
+          staff_notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+          weight_lbs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_delivery_address_id_fkey"
+            columns: ["delivery_address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_pickup_address_id_fkey"
+            columns: ["pickup_address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          loyalty_points: number
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          loyalty_points?: number
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          loyalty_points?: number
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_queue: {
+        Row: {
+          action_type: string
+          created_at: string
+          data: Json
+          error: string | null
+          id: string
+          record_id: string
+          synced: boolean
+          synced_at: string | null
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          data: Json
+          error?: string | null
+          id?: string
+          record_id: string
+          synced?: boolean
+          synced_at?: string | null
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          data?: Json
+          error?: string | null
+          id?: string
+          record_id?: string
+          synced?: boolean
+          synced_at?: string | null
+          table_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_order_number: { Args: never; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      order_status:
+        | "draft"
+        | "scheduled"
+        | "picked_up"
+        | "washing"
+        | "drying"
+        | "folding"
+        | "ready"
+        | "out_for_delivery"
+        | "delivered"
+        | "cancelled"
+      service_type: "wash_fold" | "dry_cleaning" | "ironing" | "premium"
+      user_role: "customer" | "driver" | "staff" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +365,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      order_status: [
+        "draft",
+        "scheduled",
+        "picked_up",
+        "washing",
+        "drying",
+        "folding",
+        "ready",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
+      ],
+      service_type: ["wash_fold", "dry_cleaning", "ironing", "premium"],
+      user_role: ["customer", "driver", "staff", "admin"],
+    },
   },
 } as const
