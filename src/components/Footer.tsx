@@ -17,7 +17,8 @@ const Footer = () => {
               </div>
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
-              Premium laundry and dry cleaning services with eco-friendly care and same-day delivery.
+              Premium laundry and dry cleaning services for traditional Nigerian wear and everyday clothes. 
+              Eco-friendly care with same-day delivery across Lagos and Abuja.
             </p>
             <div className="flex gap-4">
               <a href="#" className="p-2 rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground transition-colors">
@@ -60,23 +61,40 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-muted-foreground">
                 <Phone className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                <span>+1 (555) 123-4567</span>
+                <div>
+                  <div>+234 (801) 234-5678</div>
+                  <div className="text-xs">Lagos Office</div>
+                </div>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground">
                 <Mail className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                <span>hello@udc-laundry.com</span>
+                <span>hello@udc-laundry.ng</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground">
                 <MapPin className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                <span>123 Clean Street, Fresh City, FC 12345</span>
+                <div>
+                  <div>Victoria Island, Lagos</div>
+                  <div className="text-xs mt-1">Wuse II, Abuja</div>
+                </div>
               </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} UDC - Usman Laundry Cleaning. All rights reserved.</p>
+        <div className="pt-8 border-t border-border">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
+              &copy; {new Date().getFullYear()} UDC - Usman Laundry Cleaning. All rights reserved.
+            </p>
+            <div className="flex gap-6 text-sm text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
+                Serving Lagos & Abuja
+              </span>
+              <span>₦ Nigerian Currency</span>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
