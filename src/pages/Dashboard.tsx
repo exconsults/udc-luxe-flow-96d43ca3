@@ -1,25 +1,85 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Clock, MapPin, Award, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Package, Clock, MapPin, Award, Plus, WifiOff, Wifi, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { offlineStorage, OfflineOrder } from "@/lib/offline-storage";
 
 const Dashboard = () => {
+  const { user, isOnline, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState<OfflineOrder[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    // Load offline data
+    const loadData = async () => {
+      const cachedOrders = await offlineStorage.getOrders(user.id);
+      setOrders(cachedOrders);
+
+      const cachedProfile = await offlineStorage.getProfile(user.id);
+      setProfile(cachedProfile);
+    };
+
+    loadData();
+  }, [user, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  if (!user) return null;
+
+  const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status));
+  const completedCount = orders.filter(o => o.status === 'delivered').length;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Welcome back, John!</h1>
-              <p className="text-muted-foreground mt-1">Manage your laundry orders and track deliveries</p>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-3xl font-bold text-foreground">
+                  Welcome back, {profile?.firstName || 'User'}!
+                </h1>
+                {!isOnline && (
+                  <div className="px-3 py-1 bg-destructive/10 border border-destructive/20 rounded-full flex items-center gap-2">
+                    <WifiOff className="h-4 w-4 text-destructive" />
+                    <span className="text-xs font-medium text-destructive">Offline</span>
+                  </div>
+                )}
+                {isOnline && (
+                  <div className="px-3 py-1 bg-secondary/10 border border-secondary/20 rounded-full flex items-center gap-2">
+                    <Wifi className="h-4 w-4 text-secondary" />
+                    <span className="text-xs font-medium text-secondary">Online</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-muted-foreground">
+                {isOnline ? 'Manage your laundry orders and track deliveries' : 'Viewing cached data - changes will sync when online'}
+              </p>
             </div>
-            <Link to="/dashboard/new-order">
-              <Button className="bg-primary hover:bg-primary/90">
-                <Plus className="h-4 w-4 mr-2" />
-                New Order
+            <div className="flex gap-2">
+              <Link to="/dashboard/new-order">
+                <Button className="bg-primary hover:bg-primary/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Order
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -33,7 +93,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">3</div>
+                <div className="text-3xl font-bold">{activeOrders.length}</div>
                 <Package className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
@@ -45,7 +105,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">24</div>
+                <div className="text-3xl font-bold">{completedCount}</div>
                 <Clock className="h-8 w-8 text-secondary" />
               </div>
             </CardContent>
@@ -57,7 +117,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">480</div>
+                <div className="text-3xl font-bold">{profile?.loyaltyPoints || 0}</div>
                 <Award className="h-8 w-8 text-accent" />
               </div>
             </CardContent>
@@ -69,7 +129,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">2</div>
+                <div className="text-3xl font-bold">0</div>
                 <MapPin className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
@@ -79,40 +139,48 @@ const Dashboard = () => {
         {/* Active Orders */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Active Orders</CardTitle>
-            <CardDescription>Track your current laundry orders in real-time</CardDescription>
+            <CardTitle>Active Orders {!isOnline && <span className="text-sm font-normal text-muted-foreground">(Cached)</span>}</CardTitle>
+            <CardDescription>Track your current laundry orders</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { id: "ORD-001", status: "Washing", service: "Wash & Fold", weight: "5 lbs", eta: "2 hours" },
-                { id: "ORD-002", status: "Out for Delivery", service: "Dry Cleaning", items: "3 items", eta: "30 mins" },
-                { id: "ORD-003", status: "Ready", service: "Ironing", items: "5 items", eta: "Ready for pickup" },
-              ].map((order) => (
-                <div 
-                  key={order.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 transition-all hover:shadow-md"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <Package className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">{order.id}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.service} • {order.weight || order.items}
+            {activeOrders.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No active orders</p>
+                <Link to="/dashboard/new-order">
+                  <Button className="mt-4">Create Your First Order</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activeOrders.slice(0, 3).map((order) => (
+                  <div 
+                    key={order.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-primary/10">
+                        <Package className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-semibold">{order.orderNumber || 'Draft'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {order.serviceType} • {order.weightLbs ? `${order.weightLbs} lbs` : `${order.itemCount} items`}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary mb-1">
-                      {order.status}
+                    <div className="text-right">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary mb-1 capitalize">
+                        {order.status.replace('_', ' ')}
+                      </div>
+                      {!order.isSynced && (
+                        <div className="text-xs text-muted-foreground">Pending sync</div>
+                      )}
                     </div>
-                    <div className="text-sm text-muted-foreground">{order.eta}</div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <div className="mt-6">
               <Button variant="outline" className="w-full">View All Orders</Button>
             </div>
