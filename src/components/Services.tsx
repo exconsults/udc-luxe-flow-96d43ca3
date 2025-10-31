@@ -97,11 +97,8 @@ const Services = () => {
               <div className="mt-16 text-center">
           <p className="text-muted-foreground mb-6 text-lg">Trusted by Nigerians for premium laundry care</p>
           <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
-            <span className="px-4 py-2 bg-secondary/10 border border-secondary/20 rounded-full">
-              ₦ Nigerian Currency
-            </span>
             <span className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
-              Lagos & Abuja Delivery
+              Sokoto State Delivery
             </span>
             <span className="px-4 py-2 bg-accent/10 border border-accent/20 rounded-full">
               Arewa Specialists

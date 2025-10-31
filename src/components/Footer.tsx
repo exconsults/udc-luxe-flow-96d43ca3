@@ -18,7 +18,7 @@ const Footer = () => {
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
               Premium laundry and dry cleaning services for traditional Nigerian wear and everyday clothes. 
-              Eco-friendly care with same-day delivery across Lagos and Abuja.
+              Eco-friendly care with same-day delivery across Sokoto State.
             </p>
             <div className="flex gap-4">
               <a href="#" className="p-2 rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground transition-colors">
@@ -62,8 +62,8 @@ const Footer = () => {
               <li className="flex items-start gap-3 text-muted-foreground">
                 <Phone className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
                 <div>
-                  <div>+234 (801) 234-5678</div>
-                  <div className="text-xs">Lagos Office</div>
+                  <div>07067603002</div>
+                  <div className="text-xs">Sokoto Office</div>
                 </div>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground">
@@ -73,8 +73,8 @@ const Footer = () => {
               <li className="flex items-start gap-3 text-muted-foreground">
                 <MapPin className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
                 <div>
-                  <div>Victoria Island, Lagos</div>
-                  <div className="text-xs mt-1">Wuse II, Abuja</div>
+                  <div>Sabon Titin Area</div>
+                  <div className="text-xs mt-1">Sokoto State, Nigeria</div>
                 </div>
               </li>
             </ul>
@@ -90,9 +90,8 @@ const Footer = () => {
             <div className="flex gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
-                Serving Lagos & Abuja
+                Serving Sokoto State
               </span>
-              <span>₦ Nigerian Currency</span>
             </div>
           </div>
         </div>

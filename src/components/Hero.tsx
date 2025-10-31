@@ -29,7 +29,7 @@ const Hero = () => {
           {/* Left Column - Text Content */}
           <div className="max-w-2xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20 mb-8 animate-fade-in backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20 mb-6 animate-fade-in backdrop-blur-sm mt-4">
               <Sparkles className="h-4 w-4 text-secondary" />
               <span className="text-sm font-medium text-secondary">100% Eco-Friendly Detergents</span>
             </div>
@@ -94,7 +94,7 @@ const Hero = () => {
             </div>
 
             {/* Rating */}
-            <div className="flex items-center gap-4 mt-8 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+            <div className="flex flex-wrap items-center gap-3 mt-8 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-5 w-5 fill-accent text-accent" />

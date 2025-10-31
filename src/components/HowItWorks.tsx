@@ -4,7 +4,7 @@ const steps = [
   {
     icon: Calendar,
     title: "1. Book Pickup",
-    description: "Schedule a convenient pickup time through our app or website. We come to your location in Lagos or Abuja.",
+    description: "Schedule a convenient pickup time through our app or website. We come to your location in Sokoto State.",
     color: "text-primary",
     bgColor: "bg-primary/10",
   },
@@ -72,7 +72,7 @@ const HowItWorks = () => {
           <div className="inline-flex items-center gap-8 p-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-2xl border border-primary/20">
             <div className="text-left">
               <div className="text-sm text-muted-foreground mb-1">Available in</div>
-              <div className="text-xl font-bold text-foreground">Lagos & Abuja</div>
+              <div className="text-xl font-bold text-foreground">Sokoto State</div>
             </div>
             <div className="h-12 w-px bg-border"></div>
             <div className="text-left">
