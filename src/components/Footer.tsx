@@ -37,9 +37,9 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-3">
-              <li><Link to="/#services" className="text-muted-foreground hover:text-primary transition-colors">Services</Link></li>
-              <li><Link to="/#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How It Works</Link></li>
-              <li><Link to="/#pricing" className="text-muted-foreground hover:text-primary transition-colors">Pricing</Link></li>
+              <li><Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">Services</Link></li>
+              <li><Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How It Works</Link></li>
+              <li><Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors">Pricing</Link></li>
               <li><Link to="/auth" className="text-muted-foreground hover:text-primary transition-colors">Sign In</Link></li>
             </ul>
           </div>
@@ -48,10 +48,10 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-lg mb-4">Support</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Help Center</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact Us</a></li>
+              <li><Link to="/help" className="text-muted-foreground hover:text-primary transition-colors">Help Center</Link></li>
+              <li><Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact Us</Link></li>
             </ul>
           </div>
 
