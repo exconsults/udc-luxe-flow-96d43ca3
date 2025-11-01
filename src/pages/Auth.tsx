@@ -1,18 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, WifiOff, Sparkles, Shield, Clock } from "lucide-react";
+import { ArrowLeft, WifiOff, Sparkles, Shield, Clock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import udcLogo from "@/assets/udc-logo.png";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, isOnline } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const { signIn, signUp, isOnline, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,6 +63,31 @@ const Auth = () => {
     } catch (error: any) {
       console.error('Sign up error:', error);
       alert(error.message || 'Failed to sign up');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      
+      if (error) throw error;
+      
+      setResetSent(true);
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setResetSent(false);
+        setResetEmail("");
+      }, 3000);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      alert(error.message || 'Failed to send reset email');
     } finally {
       setIsLoading(false);
     }
@@ -180,17 +218,35 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input 
-                          id="password"
-                          name="password"
-                          type="password" 
-                          placeholder="••••••••" 
-                          required 
-                          className="h-11"
-                        />
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password">Password</Label>
+                          <button
+                            type="button"
+                            onClick={() => setShowForgotPassword(true)}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <Input 
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••" 
+                            required 
+                            className="h-11 pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
-                      <Button 
+                      <Button
                         type="submit" 
                         className="w-full h-11 bg-primary hover:bg-primary/90 text-base" 
                         disabled={isLoading}
@@ -246,14 +302,23 @@ const Auth = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="signupPassword">Password</Label>
-                        <Input 
-                          id="signupPassword"
-                          name="signupPassword"
-                          type="password" 
-                          placeholder="••••••••" 
-                          required 
-                          className="h-11"
-                        />
+                        <div className="relative">
+                          <Input 
+                            id="signupPassword"
+                            name="signupPassword"
+                            type={showSignupPassword ? "text" : "password"}
+                            placeholder="••••••••" 
+                            required 
+                            className="h-11 pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSignupPassword(!showSignupPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
@@ -278,6 +343,64 @@ const Auth = () => {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* Forgot Password Modal */}
+            {showForgotPassword && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+                <Card className="w-full max-w-md">
+                  <CardHeader>
+                    <CardTitle>Reset Password</CardTitle>
+                    <CardDescription>
+                      {resetSent 
+                        ? "Check your email for the reset link" 
+                        : "Enter your email to receive a password reset link"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {resetSent ? (
+                      <div className="text-center py-4 text-green-600">
+                        ✓ Password reset email sent successfully!
+                      </div>
+                    ) : (
+                      <form onSubmit={handleForgotPassword} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="resetEmail">Email</Label>
+                          <Input
+                            id="resetEmail"
+                            type="email"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            required
+                            className="h-11"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setShowForgotPassword(false);
+                              setResetEmail("");
+                            }}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className="flex-1"
+                          >
+                            {isLoading ? "Sending..." : "Send Reset Link"}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </div>
