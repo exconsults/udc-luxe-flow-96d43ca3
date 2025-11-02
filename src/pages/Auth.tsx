@@ -19,6 +19,10 @@ const Auth = () => {
   const [resetSent, setResetSent] = useState(false);
   const { signIn, signUp, isOnline, user } = useAuth();
   const navigate = useNavigate();
+  
+  // Get referral code from URL if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const refCode = urlParams.get('ref') || "";
 
   // Redirect if already logged in
   useEffect(() => {
@@ -56,9 +60,71 @@ const Auth = () => {
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
     const phone = formData.get('phone') as string;
+    const referralCode = formData.get('referralCode') as string;
 
     try {
+      // First sign up the user
       await signUp(email, password, firstName, lastName, phone);
+      
+      // If there's a referral code, handle the referral
+      if (referralCode && user) {
+        // Find the referrer
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('referral_code', referralCode.toUpperCase())
+          .single();
+
+        if (referrer) {
+          // Update the new user's referred_by field
+          await supabase
+            .from('profiles')
+            .update({ referred_by: referrer.id })
+            .eq('id', user.id);
+
+          // Give 50 points to new user
+          await supabase
+            .from('rewards')
+            .insert({
+              user_id: user.id,
+              points: 50,
+              reason: 'referral_signup',
+            });
+
+          // Give 100 points to referrer
+          await supabase
+            .from('rewards')
+            .insert({
+              user_id: referrer.id,
+              points: 100,
+              reason: 'referral',
+            });
+
+          // Update loyalty points - fetch current values and increment
+          const { data: newUserProfile } = await supabase
+            .from('profiles')
+            .select('loyalty_points')
+            .eq('id', user.id)
+            .single();
+
+          await supabase
+            .from('profiles')
+            .update({ loyalty_points: (newUserProfile?.loyalty_points || 0) + 50 })
+            .eq('id', user.id);
+
+          const { data: referrerProfile } = await supabase
+            .from('profiles')
+            .select('loyalty_points')
+            .eq('id', referrer.id)
+            .single();
+
+          await supabase
+            .from('profiles')
+            .update({ loyalty_points: (referrerProfile?.loyalty_points || 0) + 100 })
+            .eq('id', referrer.id);
+        }
+      }
+      
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -331,7 +397,21 @@ const Auth = () => {
                           className="h-11"
                         />
                       </div>
-                      <Button 
+                      <div className="space-y-2">
+                        <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                        <Input 
+                          id="referralCode"
+                          name="referralCode"
+                          placeholder="Enter referral code" 
+                          defaultValue={refCode}
+                          className="h-11 uppercase"
+                          maxLength={10}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Have a referral code? Get 50 bonus points!
+                        </p>
+                      </div>
+                      <Button
                         type="submit" 
                         className="w-full h-11 bg-primary hover:bg-primary/90 text-base" 
                         disabled={isLoading || !isOnline}

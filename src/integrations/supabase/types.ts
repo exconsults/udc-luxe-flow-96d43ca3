@@ -153,6 +153,8 @@ export type Database = {
           last_name: string | null
           loyalty_points: number
           phone: string | null
+          referral_code: string | null
+          referred_by: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -165,6 +167,8 @@ export type Database = {
           last_name?: string | null
           loyalty_points?: number
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -177,10 +181,52 @@ export type Database = {
           last_name?: string | null
           loyalty_points?: number
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          created_at: string | null
+          id: string
+          points: number
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          points?: number
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          points?: number
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sync_queue: {
         Row: {
@@ -221,12 +267,70 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          payment_method: string
+          status: string
+          transaction_reference: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          payment_method?: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          payment_method?: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       generate_order_number: { Args: never; Returns: string }
+      generate_referral_code: { Args: never; Returns: string }
     }
     Enums: {
       order_status:
