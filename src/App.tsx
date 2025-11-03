@@ -9,6 +9,9 @@ import { DashboardLayout } from "./components/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import NewOrder from "./pages/dashboard/NewOrder";
 import Referrals from "./pages/dashboard/Referrals";
+import TrackOrders from "./pages/dashboard/TrackOrders";
+import OrderHistory from "./pages/dashboard/OrderHistory";
+import Rewards from "./pages/dashboard/Rewards";
 import Profile from "./pages/Profile";
 import Services from "./pages/Services";
 import HowItWorks from "./pages/HowItWorks";
@@ -34,9 +37,9 @@ const App = () => (
             <Route index element={<Overview />} />
             <Route path="new-order" element={<NewOrder />} />
             <Route path="referrals" element={<Referrals />} />
-            <Route path="track" element={<div className="p-6"><h1 className="text-2xl font-bold">Track Orders - Coming Soon</h1></div>} />
-            <Route path="history" element={<div className="p-6"><h1 className="text-2xl font-bold">Order History - Coming Soon</h1></div>} />
-            <Route path="rewards" element={<div className="p-6"><h1 className="text-2xl font-bold">Rewards - Coming Soon</h1></div>} />
+            <Route path="track" element={<TrackOrders />} />
+            <Route path="history" element={<OrderHistory />} />
+            <Route path="rewards" element={<Rewards />} />
           </Route>
           <Route path="/profile" element={<Profile />} />
           <Route path="/services" element={<Services />} />

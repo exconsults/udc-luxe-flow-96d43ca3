@@ -73,9 +73,16 @@ export function DashboardLayout() {
                 <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                   <div className="text-right hidden sm:block">
                     <div className="text-sm font-medium text-foreground">
-                      {profile?.first_name ? `${profile.first_name} ${profile.last_name}` : 'User'}
+                      {profile?.first_name && profile?.last_name 
+                        ? `${profile.first_name} ${profile.last_name}`
+                        : profile?.email?.split('@')[0] || 'Account'}
                     </div>
-                    <div className="text-xs text-muted-foreground">{profile?.email}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span>{profile?.email}</span>
+                      {profile?.loyalty_points > 0 && (
+                        <span className="text-primary font-medium">• {profile.loyalty_points} pts</span>
+                      )}
+                    </div>
                   </div>
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
                     <AvatarImage src={profile?.avatar_url} />
