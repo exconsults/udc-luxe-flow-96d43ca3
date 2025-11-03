@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, TrendingUp, Gift, Star, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Award, TrendingUp, Gift, Star, Users, Copy, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 const Rewards = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [rewards, setRewards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [referralStats, setReferralStats] = useState({
+    totalReferrals: 0,
+    pointsEarned: 0,
+  });
 
   useEffect(() => {
     if (user) {
@@ -37,9 +44,48 @@ const Rewards = () => {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
+    // Count referrals
+    const { count: referralCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('referred_by', user.id);
+
+    // Get referral rewards
+    const { data: referralRewards } = await supabase
+      .from('rewards')
+      .select('points')
+      .eq('user_id', user.id)
+      .eq('reason', 'referral');
+
+    const totalReferralPoints = referralRewards?.reduce((sum, r) => sum + r.points, 0) || 0;
+
     setProfile(profileData);
     setRewards(rewardsData || []);
+    setReferralStats({
+      totalReferrals: referralCount || 0,
+      pointsEarned: totalReferralPoints,
+    });
     setLoading(false);
+  };
+
+  const getReferralLink = () => {
+    return `${window.location.origin}/auth?ref=${profile?.referral_code}`;
+  };
+
+  const copyReferralLink = () => {
+    navigator.clipboard.writeText(getReferralLink());
+    toast({
+      title: "Copied!",
+      description: "Referral link copied to clipboard",
+    });
+  };
+
+  const copyReferralCode = () => {
+    navigator.clipboard.writeText(profile?.referral_code || "");
+    toast({
+      title: "Copied!",
+      description: "Referral code copied to clipboard",
+    });
   };
 
   const totalEarned = rewards.reduce((sum, r) => sum + r.points, 0);
@@ -51,6 +97,37 @@ const Rewards = () => {
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Rewards Program</h1>
         <p className="text-muted-foreground">Earn points with every order and referral</p>
+      </div>
+
+      {/* Referral Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="border-2 hover:border-primary/50 transition-all">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Referrals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-4xl font-bold text-foreground">{referralStats.totalReferrals}</div>
+              <div className="p-3 bg-primary/10 rounded-full">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 hover:border-accent/50 transition-all">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Referral Points Earned</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-4xl font-bold text-foreground">{referralStats.pointsEarned}</div>
+              <div className="p-3 bg-accent/10 rounded-full">
+                <TrendingUp className="h-8 w-8 text-accent" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Points Overview */}
@@ -92,40 +169,119 @@ const Rewards = () => {
         </Card>
       </div>
 
-      {/* How to Earn Points */}
-      <Card>
+      {/* Referral Code Card */}
+      <Card className="border-2">
         <CardHeader>
-          <CardTitle>How to Earn Points</CardTitle>
-          <CardDescription>Multiple ways to accumulate rewards</CardDescription>
+          <CardTitle>Your Referral Code</CardTitle>
+          <CardDescription>Share this code or link with friends to earn rewards</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Referral Code */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Referral Code</label>
+            <div className="flex gap-2">
+              <Input
+                value={profile?.referral_code || ""}
+                readOnly
+                className="font-mono text-lg font-bold"
+              />
+              <Button onClick={copyReferralCode} variant="outline">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Referral Link */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Referral Link</label>
+            <div className="flex gap-2">
+              <Input
+                value={getReferralLink()}
+                readOnly
+                className="text-sm"
+              />
+              <Button onClick={copyReferralLink}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* How to Earn Points */}
+      <Card className="border-2 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="h-5 w-5 text-primary" />
+            How Referrals Work
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-start gap-4 p-4 rounded-lg border border-border hover:border-primary/50 transition-all">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Users className="h-6 w-6 text-primary" />
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                1
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Refer Friends</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Earn <strong className="text-primary">100 points</strong> for each friend who signs up using your referral link
+              <div>
+                <h4 className="font-semibold text-foreground mb-1">Share Your Code</h4>
+                <p className="text-sm text-muted-foreground">
+                  Send your unique referral code or link to friends and family.
                 </p>
-                <Link to="/dashboard/referrals">
-                  <Button variant="outline" size="sm">View Referral Link</Button>
-                </Link>
               </div>
             </div>
 
-            <div className="flex items-start gap-4 p-4 rounded-lg border border-border">
-              <div className="p-3 rounded-lg bg-secondary/10">
-                <Gift className="h-6 w-6 text-secondary" />
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center font-bold">
+                2
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Sign Up Bonus</h3>
+              <div>
+                <h4 className="font-semibold text-foreground mb-1">They Sign Up</h4>
                 <p className="text-sm text-muted-foreground">
-                  Get <strong className="text-secondary">50 points</strong> when you sign up with a referral code
+                  When they create an account using your code, they get 50 bonus points!
                 </p>
               </div>
             </div>
+
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold">
+                3
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground mb-1">You Both Win!</h4>
+                <p className="text-sm text-muted-foreground">
+                  You earn 100 reward points for each successful referral, and they get 50 points to start!
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-start gap-3 p-4 bg-background rounded-lg border border-border">
+              <CheckCircle className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground mb-1">Reward points can be redeemed for:</p>
+                <ul className="text-muted-foreground space-y-1 ml-4 list-disc">
+                  <li>Discounts on future orders</li>
+                  <li>Free express delivery</li>
+                  <li>Premium service upgrades</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Earning Methods */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Other Ways to Earn</CardTitle>
+          <CardDescription>More opportunities to accumulate rewards</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
 
             <div className="flex items-start gap-4 p-4 rounded-lg border border-border opacity-60">
               <div className="p-3 rounded-lg bg-accent/10">
@@ -156,10 +312,7 @@ const Rewards = () => {
           ) : rewards.length === 0 ? (
             <div className="text-center py-12">
               <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">No rewards earned yet</p>
-              <Link to="/dashboard/referrals">
-                <Button>Start Earning with Referrals</Button>
-              </Link>
+              <p className="text-muted-foreground">No rewards earned yet. Start referring friends to earn your first rewards!</p>
             </div>
           ) : (
             <div className="space-y-3">

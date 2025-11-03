@@ -1,11 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  Plus, 
-  Package, 
-  ClipboardList, 
-  Gift, 
-  Users, 
+  PlusCircle, 
+  History, 
+  Award, 
   Settings,
   LogOut
 } from "lucide-react";
@@ -25,12 +23,10 @@ import { useNavigate } from "react-router-dom";
 import udcLogo from "@/assets/udc-logo.png";
 
 const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "New Order", url: "/dashboard/new-order", icon: Plus },
-  { title: "Track Orders", url: "/dashboard/track", icon: Package },
-  { title: "Order History", url: "/dashboard/history", icon: ClipboardList },
-  { title: "Rewards", url: "/dashboard/rewards", icon: Gift },
-  { title: "Referrals", url: "/dashboard/referrals", icon: Users },
+  { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
+  { title: "New Order", url: "/dashboard/new-order", icon: PlusCircle },
+  { title: "My Orders", url: "/dashboard/history", icon: History },
+  { title: "Rewards", url: "/dashboard/rewards", icon: Award },
 ];
 
 export function AppSidebar() {

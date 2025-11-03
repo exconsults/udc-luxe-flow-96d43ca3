@@ -8,8 +8,6 @@ import Auth from "./pages/Auth";
 import { DashboardLayout } from "./components/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import NewOrder from "./pages/dashboard/NewOrder";
-import Referrals from "./pages/dashboard/Referrals";
-import TrackOrders from "./pages/dashboard/TrackOrders";
 import OrderHistory from "./pages/dashboard/OrderHistory";
 import Rewards from "./pages/dashboard/Rewards";
 import Profile from "./pages/Profile";
@@ -36,8 +34,6 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Overview />} />
             <Route path="new-order" element={<NewOrder />} />
-            <Route path="referrals" element={<Referrals />} />
-            <Route path="track" element={<TrackOrders />} />
             <Route path="history" element={<OrderHistory />} />
             <Route path="rewards" element={<Rewards />} />
           </Route>
