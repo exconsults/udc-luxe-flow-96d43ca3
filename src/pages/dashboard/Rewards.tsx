@@ -69,7 +69,7 @@ const Rewards = () => {
   };
 
   const getReferralLink = () => {
-    return `https://udc-laundry.vercel.app/auth?ref=${profile?.referral_code}`;
+    return `https://udc-laundry.vercel.app/?ref=${profile?.referral_code}`;
   };
 
   const copyReferralLink = () => {
