@@ -89,7 +89,7 @@ const Profile = () => {
         firstName: data.first_name || "",
         lastName: data.last_name || "",
         phone: data.phone || "",
-        email: data.email || "",
+        email: user.email || data.email || "",
         avatarUrl: data.avatar_url || "",
       });
     }

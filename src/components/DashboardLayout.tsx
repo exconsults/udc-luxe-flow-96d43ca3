@@ -75,10 +75,10 @@ export function DashboardLayout() {
                     <div className="text-sm font-medium text-foreground">
                       {profile?.first_name && profile?.last_name 
                         ? `${profile.first_name} ${profile.last_name}`
-                        : profile?.email?.split('@')[0] || 'Account'}
+                        : user?.email?.split('@')[0] || 'Account'}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>{profile?.email}</span>
+                      <span>{user?.email}</span>
                       {profile?.loyalty_points > 0 && (
                         <span className="text-primary font-medium">• {profile.loyalty_points} pts</span>
                       )}

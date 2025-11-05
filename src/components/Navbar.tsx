@@ -90,9 +90,11 @@ const Navbar = () => {
                     </Avatar>
                     <div className="text-left">
                       <div className="text-sm font-medium">
-                        {profile?.first_name ? `${profile.first_name} ${profile.last_name}` : 'User'}
+                        {profile?.first_name && profile?.last_name 
+                          ? `${profile.first_name} ${profile.last_name}`
+                          : user?.email?.split('@')[0] || 'Account'}
                       </div>
-                      <div className="text-xs text-muted-foreground">{profile?.email}</div>
+                      <div className="text-xs text-muted-foreground">{user?.email}</div>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
