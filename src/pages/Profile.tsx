@@ -77,7 +77,7 @@ const Profile = () => {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error loading profile:', error);
@@ -91,6 +91,15 @@ const Profile = () => {
         phone: data.phone || "",
         email: user.email || data.email || "",
         avatarUrl: data.avatar_url || "",
+      });
+    } else {
+      // Profile doesn't exist, use user data
+      setProfile({
+        firstName: "",
+        lastName: "",
+        phone: "",
+        email: user.email || "",
+        avatarUrl: "",
       });
     }
   };

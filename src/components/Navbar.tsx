@@ -34,7 +34,7 @@ const Navbar = () => {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setProfile(data);

@@ -37,7 +37,7 @@ const Rewards = () => {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (profileData) {
           setProfile(profileData);
@@ -58,7 +58,7 @@ const Rewards = () => {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     // Load reward history
     const { data: rewardsData } = await supabase
