@@ -22,8 +22,31 @@ const Rewards = () => {
   useEffect(() => {
     if (user) {
       loadData();
+      ensureReferralCode();
     }
   }, [user]);
+
+  const ensureReferralCode = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('ensure_referral_code');
+      if (!error && data) {
+        // Reload profile to get the new code
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile(profileData);
+        }
+      }
+    } catch (error) {
+      console.error('Error ensuring referral code:', error);
+    }
+  };
 
   const loadData = async () => {
     if (!user) return;

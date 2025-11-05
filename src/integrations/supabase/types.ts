@@ -329,6 +329,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_referral_code: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
     }
