@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Award, TrendingUp, Gift, Star, Users, Copy, CheckCircle } from "lucide-react";
+import { Award, TrendingUp, Gift, Star, Users, Copy, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Rewards = () => {
   const { user } = useAuth();
@@ -18,6 +20,8 @@ const Rewards = () => {
     totalReferrals: 0,
     pointsEarned: 0,
   });
+  const [error, setError] = useState<string | null>(null);
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -31,6 +35,7 @@ const Rewards = () => {
   const ensureReferralCode = async () => {
     if (!user) return;
     
+    setGeneratingCode(true);
     try {
       const { data, error } = await supabase.rpc('ensure_referral_code');
       if (!error && data) {
@@ -47,6 +52,9 @@ const Rewards = () => {
       }
     } catch (error) {
       console.error('Error ensuring referral code:', error);
+      setError('Failed to generate referral code. Please refresh the page.');
+    } finally {
+      setGeneratingCode(false);
     }
   };
 
@@ -54,43 +62,58 @@ const Rewards = () => {
     if (!user) return;
 
     setLoading(true);
+    setError(null);
 
-    // Load profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
+    try {
+      // Load profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    // Load reward history
-    const { data: rewardsData } = await supabase
-      .from('rewards')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      if (profileError) throw profileError;
 
-    // Count referrals
-    const { count: referralCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('referred_by', user.id);
+      // Load reward history
+      const { data: rewardsData, error: rewardsError } = await supabase
+        .from('rewards')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    // Get referral rewards
-    const { data: referralRewards } = await supabase
-      .from('rewards')
-      .select('points')
-      .eq('user_id', user.id)
-      .eq('reason', 'referral');
+      if (rewardsError) throw rewardsError;
 
-    const totalReferralPoints = referralRewards?.reduce((sum, r) => sum + r.points, 0) || 0;
+      // Count referrals
+      const { count: referralCount, error: countError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('referred_by', user.id);
 
-    setProfile(profileData);
-    setRewards(rewardsData || []);
-    setReferralStats({
-      totalReferrals: referralCount || 0,
-      pointsEarned: totalReferralPoints,
-    });
-    setLoading(false);
+      if (countError) throw countError;
+
+      // Get referral rewards
+      const { data: referralRewards, error: referralError } = await supabase
+        .from('rewards')
+        .select('points')
+        .eq('user_id', user.id)
+        .eq('reason', 'referral');
+
+      if (referralError) throw referralError;
+
+      const totalReferralPoints = referralRewards?.reduce((sum, r) => sum + r.points, 0) || 0;
+
+      setProfile(profileData);
+      setRewards(rewardsData || []);
+      setReferralStats({
+        totalReferrals: referralCount || 0,
+        pointsEarned: totalReferralPoints,
+      });
+    } catch (error: any) {
+      console.error('Error loading rewards data:', error);
+      setError('Failed to load rewards data. Please refresh the page.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getReferralLink = () => {
@@ -125,6 +148,13 @@ const Rewards = () => {
         <h1 className="text-3xl font-bold text-foreground mb-2">Rewards Program</h1>
         <p className="text-muted-foreground">Earn points with every order and referral</p>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Referral Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -164,10 +194,17 @@ const Rewards = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Available Points</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-4xl font-bold text-primary">{currentPoints}</div>
-              <Award className="h-10 w-10 text-primary" />
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="text-4xl font-bold text-primary">{currentPoints}</div>
+                <Award className="h-10 w-10 text-primary" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -176,10 +213,17 @@ const Rewards = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Earned</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold text-foreground">{totalEarned}</div>
-              <TrendingUp className="h-8 w-8 text-secondary" />
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-foreground">{totalEarned}</div>
+                <TrendingUp className="h-8 w-8 text-secondary" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -188,10 +232,17 @@ const Rewards = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Points Redeemed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold text-foreground">{pointsRedeemed}</div>
-              <Gift className="h-8 w-8 text-accent" />
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-foreground">{pointsRedeemed}</div>
+                <Gift className="h-8 w-8 text-accent" />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -203,38 +254,61 @@ const Rewards = () => {
           <CardDescription>Share this code or link with friends to earn rewards</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Referral Code */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Referral Code</label>
-            <div className="flex gap-2">
-              <Input
-                value={profile?.referral_code || ""}
-                readOnly
-                className="font-mono text-lg font-bold"
-              />
-              <Button onClick={copyReferralCode} variant="outline" disabled={!profile?.referral_code}>
-                <Copy className="h-4 w-4" />
-              </Button>
+          {generatingCode ? (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-12 flex-1" />
+                  <Skeleton className="h-12 w-12" />
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 flex-1" />
+                  <Skeleton className="h-10 w-20" />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Referral Code */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Referral Code</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={profile?.referral_code || ""}
+                    readOnly
+                    className="font-mono text-lg font-bold"
+                    placeholder={loading ? "Loading..." : ""}
+                  />
+                  <Button onClick={copyReferralCode} variant="outline" disabled={!profile?.referral_code || loading}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-          <Separator />
+              <Separator />
 
-          {/* Referral Link */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Referral Link</label>
-            <div className="flex gap-2">
-              <Input
-                value={profile?.referral_code ? getReferralLink() : "Generating your referral link..."}
-                readOnly
-                className="text-sm"
-              />
-              <Button onClick={copyReferralLink} disabled={!profile?.referral_code}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy
-              </Button>
-            </div>
-          </div>
+              {/* Referral Link */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Referral Link</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={profile?.referral_code ? getReferralLink() : (loading ? "Loading..." : "Generating your referral link...")}
+                    readOnly
+                    className="text-sm"
+                  />
+                  <Button onClick={copyReferralLink} disabled={!profile?.referral_code || loading}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

@@ -8,8 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, MapPin, Trash2, Plus, ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { Upload, MapPin, Trash2, Plus, ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
 
 interface Address {
@@ -28,6 +30,10 @@ const Profile = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
   
   // Profile data
   const [profile, setProfile] = useState({
@@ -73,6 +79,9 @@ const Profile = () => {
   const loadProfile = async () => {
     if (!user) return;
 
+    setLoadingProfile(true);
+    setProfileError(null);
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -81,6 +90,8 @@ const Profile = () => {
 
     if (error) {
       console.error('Error loading profile:', error);
+      setProfileError('Failed to load profile. Please refresh the page.');
+      setLoadingProfile(false);
       return;
     }
 
@@ -125,10 +136,14 @@ const Profile = () => {
         });
       }
     }
+    setLoadingProfile(false);
   };
 
   const loadAddresses = async () => {
     if (!user) return;
+
+    setLoadingAddresses(true);
+    setAddressError(null);
 
     const { data, error } = await supabase
       .from('addresses')
@@ -138,10 +153,13 @@ const Profile = () => {
 
     if (error) {
       console.error('Error loading addresses:', error);
+      setAddressError('Failed to load addresses. Please try again.');
+      setLoadingAddresses(false);
       return;
     }
 
     setAddresses(data || []);
+    setLoadingAddresses(false);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -407,12 +425,49 @@ const Profile = () => {
                 <CardDescription>Update your personal details</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleProfileUpdate} className="space-y-6">
-                  <div className="flex items-center gap-6">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={profile.avatarUrl} />
-                      <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
-                    </Avatar>
+                {profileError && (
+                  <Alert variant="destructive" className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{profileError}</AlertDescription>
+                  </Alert>
+                )}
+                {loadingProfile ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-6">
+                      <Skeleton className="h-24 w-24 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-10 w-32" />
+                        <Skeleton className="h-4 w-40" />
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                ) : (
+                  <form onSubmit={handleProfileUpdate} className="space-y-6">
+                    <div className="flex items-center gap-6">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={profile.avatarUrl} />
+                        <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
+                      </Avatar>
                     <div>
                       <Label htmlFor="avatar" className="cursor-pointer">
                         <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
@@ -495,10 +550,11 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
 
@@ -615,12 +671,19 @@ const Profile = () => {
                   <Button
                     size="sm"
                     onClick={() => setShowAddressForm(!showAddressForm)}
+                    disabled={loadingAddresses}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
+                {addressError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{addressError}</AlertDescription>
+                  </Alert>
+                )}
                 {showAddressForm && (
                   <form onSubmit={handleAddAddress} className="space-y-4 mb-6 p-4 border rounded-lg">
                     <div className="space-y-2">
@@ -703,7 +766,18 @@ const Profile = () => {
                   </form>
                 )}
 
-                <div className="space-y-3">
+                {loadingAddresses ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="p-4 border rounded-lg space-y-2">
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
                   {addresses.map((address) => (
                     <div
                       key={address.id}
@@ -753,6 +827,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
