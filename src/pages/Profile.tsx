@@ -93,14 +93,37 @@ const Profile = () => {
         avatarUrl: data.avatar_url || "",
       });
     } else {
-      // Profile doesn't exist, use user data
-      setProfile({
-        firstName: "",
-        lastName: "",
-        phone: "",
-        email: user.email || "",
-        avatarUrl: "",
-      });
+      // Ensure a profile row exists for this user, then populate fields
+      try {
+        const first_name = (user.user_metadata as any)?.first_name || "";
+        const last_name = (user.user_metadata as any)?.last_name || "";
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            first_name,
+            last_name,
+            phone: null,
+          }, { onConflict: 'id' });
+
+        setProfile({
+          firstName: first_name,
+          lastName: last_name,
+          phone: "",
+          email: user.email || "",
+          avatarUrl: "",
+        });
+      } catch (e) {
+        console.warn('Could not create profile row:', e);
+        setProfile({
+          firstName: "",
+          lastName: "",
+          phone: "",
+          email: user.email || "",
+          avatarUrl: "",
+        });
+      }
     }
   };
 

@@ -162,7 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const redirectUrl = `${window.location.origin}/`;
 
-    const { data, error } = await supabase.auth.signUp({
+const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -176,12 +176,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) throw error;
 
-    // Update profile with phone
+    // Create or update profile row with user details
     if (data.user) {
+      const profilePayload = {
+        id: data.user.id,
+        email: data.user.email ?? email,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+      } as const;
+
+      // Use upsert to handle both new and existing users safely
       await supabase
         .from('profiles')
-        .update({ phone })
-        .eq('id', data.user.id);
+        .upsert(profilePayload, { onConflict: 'id' });
+
+      // Ensure a referral code exists immediately (non-blocking)
+      try {
+        await supabase.rpc('ensure_referral_code');
+      } catch (e) {
+        console.warn('ensure_referral_code RPC failed (non-blocking):', e);
+      }
     }
 
     toast({
