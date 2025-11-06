@@ -20,10 +20,12 @@ const Rewards = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      loadData();
-      ensureReferralCode();
-    }
+    const init = async () => {
+      if (!user) return;
+      await ensureReferralCode();
+      await loadData();
+    };
+    init();
   }, [user]);
 
   const ensureReferralCode = async () => {
@@ -92,7 +94,9 @@ const Rewards = () => {
   };
 
   const getReferralLink = () => {
-    return `https://udc-laundry.vercel.app/?ref=${profile?.referral_code}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://udc-laundry.vercel.app';
+    const code = profile?.referral_code;
+    return code ? `${origin}/?ref=${encodeURIComponent(code)}` : `${origin}/?ref=`;
   };
 
   const copyReferralLink = () => {
@@ -208,7 +212,7 @@ const Rewards = () => {
                 readOnly
                 className="font-mono text-lg font-bold"
               />
-              <Button onClick={copyReferralCode} variant="outline">
+              <Button onClick={copyReferralCode} variant="outline" disabled={!profile?.referral_code}>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -221,11 +225,11 @@ const Rewards = () => {
             <label className="text-sm font-medium text-foreground">Referral Link</label>
             <div className="flex gap-2">
               <Input
-                value={getReferralLink()}
+                value={profile?.referral_code ? getReferralLink() : "Generating your referral link..."}
                 readOnly
                 className="text-sm"
               />
-              <Button onClick={copyReferralLink}>
+              <Button onClick={copyReferralLink} disabled={!profile?.referral_code}>
                 <Copy className="h-4 w-4 mr-2" />
                 Copy
               </Button>

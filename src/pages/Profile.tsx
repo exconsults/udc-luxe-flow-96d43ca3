@@ -125,16 +125,35 @@ const Profile = () => {
     if (!e.target.files || !e.target.files[0] || !user) return;
 
     const file = e.target.files[0];
+
+    // Basic validation
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPG, PNG or WEBP image.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Max file size is 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const fileExt = file.name.split('.').pop();
     const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
     setUploading(true);
 
     try {
-      // Upload to storage
+      // Upload to storage (with content type + upsert)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, { contentType: file.type, cacheControl: '3600', upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -151,7 +170,9 @@ const Profile = () => {
 
       if (updateError) throw updateError;
 
-      setProfile({ ...profile, avatarUrl: publicUrl });
+      setProfile((prev) => ({ ...prev, avatarUrl: publicUrl }));
+      // Reload to ensure UI reflects latest
+      await loadProfile();
 
       toast({
         title: "Avatar updated",
@@ -161,7 +182,7 @@ const Profile = () => {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error.message ?? 'Please try again',
         variant: "destructive",
       });
     } finally {
