@@ -11,6 +11,7 @@ import NewOrder from "./pages/dashboard/NewOrder";
 import OrderHistory from "./pages/dashboard/OrderHistory";
 import Rewards from "./pages/dashboard/Rewards";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Services from "./pages/Services";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="rewards" element={<Rewards />} />
           </Route>
           <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/services" element={<Services />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />

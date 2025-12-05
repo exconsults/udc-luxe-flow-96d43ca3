@@ -138,9 +138,6 @@ const Rewards = () => {
     });
   };
 
-  const totalEarned = rewards.reduce((sum, r) => sum + r.points, 0);
-  const currentPoints = profile?.loyalty_points || 0;
-  const pointsRedeemed = totalEarned - currentPoints;
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
@@ -187,65 +184,6 @@ const Rewards = () => {
         </Card>
       </div>
 
-      {/* Points Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-2 border-primary/50 bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Available Points</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-10 w-20" />
-                <Skeleton className="h-10 w-10 rounded-full" />
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div className="text-4xl font-bold text-primary">{currentPoints}</div>
-                <Award className="h-10 w-10 text-primary" />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Earned</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-9 w-16" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold text-foreground">{totalEarned}</div>
-                <TrendingUp className="h-8 w-8 text-secondary" />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Points Redeemed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-9 w-16" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold text-foreground">{pointsRedeemed}</div>
-                <Gift className="h-8 w-8 text-accent" />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Referral Code Card */}
       <Card className="border-2">
