@@ -117,9 +117,8 @@ const Rewards = () => {
   };
 
   const getReferralLink = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://udc-laundry.vercel.app';
     const code = profile?.referral_code;
-    return code ? `${origin}/?ref=${encodeURIComponent(code)}` : `${origin}/?ref=`;
+    return code ? `https://udc-laundry.vercel.app/?ref=${encodeURIComponent(code)}` : 'https://udc-laundry.vercel.app/';
   };
 
   const copyReferralLink = () => {
