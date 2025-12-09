@@ -5,7 +5,8 @@ import {
   History, 
   Award, 
   Settings,
-  LogOut
+  LogOut,
+  ShieldCheck
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useNavigate } from "react-router-dom";
 import udcLogo from "@/assets/udc-logo.png";
 
@@ -31,6 +33,7 @@ const navItems = [
 
 export function AppSidebar() {
   const { signOut } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -82,6 +85,34 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Admin Section */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-primary text-primary-foreground font-medium"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        }`
+                      }
+                    >
+                      <ShieldCheck className="h-5 w-5 shrink-0" />
+                      <span>Admin Panel</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* Settings & Logout */}
         <SidebarGroup className="mt-auto">
