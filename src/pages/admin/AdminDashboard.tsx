@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,12 +20,13 @@ import {
   ShieldCheck,
   AlertCircle,
   UserCog,
-  ArrowLeft
+  ArrowLeft,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
 
 type AppRole = 'admin' | 'moderator' | 'user';
+type OrderStatus = 'draft' | 'scheduled' | 'picked_up' | 'washing' | 'drying' | 'folding' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
 
 interface UserRole {
   id: string;
@@ -33,6 +34,19 @@ interface UserRole {
   role: AppRole;
   created_at: string;
 }
+
+const orderStatuses: { value: OrderStatus; label: string }[] = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'picked_up', label: 'Picked Up' },
+  { value: 'washing', label: 'Washing' },
+  { value: 'drying', label: 'Drying' },
+  { value: 'folding', label: 'Folding' },
+  { value: 'ready', label: 'Ready' },
+  { value: 'out_for_delivery', label: 'Out for Delivery' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -84,7 +98,7 @@ const AdminDashboard = () => {
   });
 
   // Fetch all orders
-  const { data: orders, isLoading: ordersLoading } = useQuery({
+  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
     queryKey: ['admin-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -116,13 +130,11 @@ const AdminDashboard = () => {
   // Mutation to assign role
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
-      // First, remove existing role if any
       await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', userId);
 
-      // Then insert new role
       const { error } = await supabase
         .from('user_roles')
         .insert({ user_id: userId, role });
@@ -161,6 +173,26 @@ const AdminDashboard = () => {
     }
   });
 
+  // Mutation to update order status
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      toast.success('Order status updated');
+    },
+    onError: (error) => {
+      console.error('Error updating order:', error);
+      toast.error('Failed to update order status');
+    }
+  });
+
   const getUserRole = (userId: string): AppRole | null => {
     const role = userRoles?.find(r => r.user_id === userId);
     return role?.role || null;
@@ -184,6 +216,10 @@ const AdminDashboard = () => {
       return;
     }
     removeRoleMutation.mutate(userId);
+  };
+
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    updateOrderStatusMutation.mutate({ orderId, status: newStatus });
   };
 
   if (authLoading || adminLoading) {
@@ -211,7 +247,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Calculate statistics
   const totalUsers = users?.length || 0;
   const totalOrders = orders?.length || 0;
   const totalRevenue = transactions?.reduce((sum, t) => t.status === 'completed' ? sum + Number(t.amount) : sum, 0) || 0;
@@ -244,6 +279,11 @@ const AdminDashboard = () => {
       default:
         return 'bg-muted text-muted-foreground';
     }
+  };
+
+  const getUserEmail = (userId: string) => {
+    const userProfile = users?.find(u => u.id === userId);
+    return userProfile?.email || 'Unknown';
   };
 
   return (
@@ -318,6 +358,82 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Order Management */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                <div>
+                  <CardTitle>Order Management</CardTitle>
+                  <CardDescription>Update order statuses</CardDescription>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetchOrders()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {ordersLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : orders && orders.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map(order => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-mono">{order.order_number}</TableCell>
+                        <TableCell className="text-sm">{getUserEmail(order.user_id)}</TableCell>
+                        <TableCell className="capitalize">
+                          {order.service_type.replace('_', ' ')}
+                        </TableCell>
+                        <TableCell>₦{Number(order.total).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={order.status}
+                            onValueChange={(value) => handleStatusChange(order.id, value as OrderStatus)}
+                            disabled={updateOrderStatusMutation.isPending}
+                          >
+                            <SelectTrigger className={`w-[160px] h-8 text-xs ${getStatusColor(order.status)}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {orderStatuses.map(status => (
+                                <SelectItem key={status.value} value={status.value}>
+                                  {status.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(order.created_at), 'MMM d, yyyy')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No orders yet</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Users Table with Role Management */}
         <Card>
@@ -406,56 +522,6 @@ const AdminDashboard = () => {
                   </TableBody>
                 </Table>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Orders Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Latest orders from all customers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {ordersLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-              </div>
-            ) : orders && orders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order #</TableHead>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders?.slice(0, 10).map(order => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-mono">{order.order_number}</TableCell>
-                        <TableCell className="capitalize">
-                          {order.service_type.replace('_', ' ')}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status.replace('_', ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>₦{Number(order.total).toLocaleString()}</TableCell>
-                        <TableCell>
-                          {format(new Date(order.created_at), 'MMM d, yyyy')}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">No orders yet</p>
             )}
           </CardContent>
         </Card>
