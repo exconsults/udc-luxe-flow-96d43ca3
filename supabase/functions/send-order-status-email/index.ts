@@ -12,14 +12,15 @@ interface OrderStatusEmailRequest {
   userEmail: string;
   userName?: string;
   orderNumber: string;
+  staffNotes?: string;
 }
 
-const getStatusMessage = (status: string): { title: string; message: string; color: string } => {
+const getStatusMessage = (status: string, staffNotes?: string): { title: string; message: string; color: string; extraInfo?: string } => {
   const statusMessages: Record<string, { title: string; message: string; color: string }> = {
     scheduled: {
-      title: "Order Scheduled",
-      message: "Your laundry pickup has been scheduled. Our driver will arrive at the designated time.",
-      color: "#3B82F6"
+      title: "Order Approved ✓",
+      message: "Great news! Your cash payment has been received and your order has been approved. We'll start processing your laundry right away.",
+      color: "#22C55E"
     },
     picked_up: {
       title: "Laundry Picked Up",
@@ -63,10 +64,15 @@ const getStatusMessage = (status: string): { title: string; message: string; col
     }
   };
 
-  return statusMessages[status] || {
+  const result = statusMessages[status] || {
     title: "Order Update",
     message: `Your order status has been updated to: ${status}`,
     color: "#6B7280"
+  };
+
+  return {
+    ...result,
+    extraInfo: staffNotes || undefined
   };
 };
 
@@ -83,13 +89,24 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const { orderId, newStatus, userEmail, userName, orderNumber }: OrderStatusEmailRequest = await req.json();
+    const { orderId, newStatus, userEmail, userName, orderNumber, staffNotes }: OrderStatusEmailRequest = await req.json();
 
     console.log(`Sending status update email for order ${orderNumber} to ${userEmail}`);
     console.log(`New status: ${newStatus}`);
+    if (staffNotes) {
+      console.log(`Staff notes: ${staffNotes}`);
+    }
 
-    const { title, message, color } = getStatusMessage(newStatus);
+    const { title, message, color, extraInfo } = getStatusMessage(newStatus, staffNotes);
     const displayName = userName || "Valued Customer";
+
+    // Build extra info section if staff notes are provided
+    const extraInfoHtml = extraInfo ? `
+      <div style="background-color: #ecfdf5; border: 1px solid #10b981; padding: 16px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0; color: #065f46; font-weight: 600; font-size: 14px;">📋 Important Information:</p>
+        <p style="margin: 8px 0 0 0; color: #047857; font-size: 14px; line-height: 1.5;">${extraInfo}</p>
+      </div>
+    ` : '';
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -129,6 +146,8 @@ const handler = async (req: Request): Promise<Response> => {
                 <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                   ${message}
                 </p>
+
+                ${extraInfoHtml}
                 
                 <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
                   <p style="margin: 0; color: #64748b; font-size: 14px;">Order Number</p>
@@ -136,7 +155,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
                 
                 <div style="text-align: center; margin-top: 30px;">
-                  <a href="https://udc-laundry.lovable.app/dashboard" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+                  <a href="https://preview--udc-luxe-flow.lovable.app/dashboard" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
                     View Order Details
                   </a>
                 </div>
