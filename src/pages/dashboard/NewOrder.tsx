@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Package, Sparkles, Shirt, Crown, Check } from "lucide-react";
+import { Package, Sparkles, Shirt, Crown, Check, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type ServiceType = "wash_fold" | "dry_cleaning" | "ironing" | "premium";
 
@@ -78,6 +79,7 @@ const NewOrder = () => {
       
       if (orderNumError) throw orderNumError;
 
+      // Create order as 'draft' status (pending cash payment)
       const { error } = await supabase
         .from('orders')
         .insert({
@@ -95,12 +97,12 @@ const NewOrder = () => {
           subtotal: subtotal,
           tax: tax,
           total: total,
-          status: 'scheduled'
+          status: 'draft' // Pending cash payment approval
         });
 
       if (error) throw error;
 
-      toast.success("Order created successfully!");
+      toast.success("Order created successfully! Please pay cash to admin for approval.");
       navigate('/dashboard/history');
     } catch (error: any) {
       console.error('Error creating order:', error);
@@ -119,6 +121,15 @@ const NewOrder = () => {
         <h1 className="text-3xl font-bold text-foreground mb-2">Create New Order</h1>
         <p className="text-muted-foreground">Schedule your laundry pickup</p>
       </div>
+
+      {/* Cash Payment Notice */}
+      <Alert className="border-primary/50 bg-primary/5">
+        <AlertCircle className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-primary">
+          <strong>Cash Payment:</strong> Orders are created as pending. Please pay cash to our staff during pickup. 
+          Once payment is confirmed, admin will approve your order and notify you of the estimated delivery time.
+        </AlertDescription>
+      </Alert>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form */}

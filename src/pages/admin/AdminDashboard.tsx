@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -21,7 +24,9 @@ import {
   AlertCircle,
   UserCog,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -36,8 +41,8 @@ interface UserRole {
 }
 
 const orderStatuses: { value: OrderStatus; label: string }[] = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'draft', label: 'Pending Payment' },
+  { value: 'scheduled', label: 'Approved/Scheduled' },
   { value: 'picked_up', label: 'Picked Up' },
   { value: 'washing', label: 'Washing' },
   { value: 'drying', label: 'Drying' },
@@ -57,6 +62,12 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<{ id: string; email: string; name: string } | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('user');
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  
+  // Approval dialog state
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [estimatedDelivery, setEstimatedDelivery] = useState('');
+  const [staffNotes, setStaffNotes] = useState('');
 
   useEffect(() => {
     if (!authLoading && !adminLoading) {
@@ -175,10 +186,25 @@ const AdminDashboard = () => {
 
   // Mutation to update order status
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status, orderNumber, userId }: { orderId: string; status: OrderStatus; orderNumber: string; userId: string }) => {
+    mutationFn: async ({ orderId, status, orderNumber, userId, staffNotes }: { 
+      orderId: string; 
+      status: OrderStatus; 
+      orderNumber: string; 
+      userId: string;
+      staffNotes?: string;
+    }) => {
+      const updateData: any = { 
+        status, 
+        updated_at: new Date().toISOString() 
+      };
+      
+      if (staffNotes) {
+        updateData.staff_notes = staffNotes;
+      }
+
       const { error } = await supabase
         .from('orders')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', orderId);
 
       if (error) throw error;
@@ -194,7 +220,8 @@ const AdminDashboard = () => {
               newStatus: status,
               userEmail: userProfile.email,
               userName: userProfile.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : undefined,
-              orderNumber
+              orderNumber,
+              staffNotes: staffNotes || undefined
             }
           });
           if (emailError) {
@@ -212,6 +239,61 @@ const AdminDashboard = () => {
     onError: (error) => {
       console.error('Error updating order:', error);
       toast.error('Failed to update order status');
+    }
+  });
+
+  // Mutation to approve order
+  const approveOrderMutation = useMutation({
+    mutationFn: async ({ orderId, orderNumber, userId, estimatedDelivery, staffNotes }: { 
+      orderId: string; 
+      orderNumber: string; 
+      userId: string;
+      estimatedDelivery: string;
+      staffNotes: string;
+    }) => {
+      const notes = `Estimated delivery: ${estimatedDelivery}. ${staffNotes}`.trim();
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'scheduled',
+          staff_notes: notes,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // Get user email for notification
+      const userProfile = users?.find(u => u.id === userId);
+      if (userProfile?.email) {
+        try {
+          await supabase.functions.invoke('send-order-status-email', {
+            body: {
+              orderId,
+              newStatus: 'scheduled',
+              userEmail: userProfile.email,
+              userName: userProfile.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : undefined,
+              orderNumber,
+              staffNotes: notes
+            }
+          });
+        } catch (emailErr) {
+          console.error('Email notification error:', emailErr);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      toast.success('Order approved! Customer will be notified.');
+      setIsApprovalDialogOpen(false);
+      setSelectedOrder(null);
+      setEstimatedDelivery('');
+      setStaffNotes('');
+    },
+    onError: (error) => {
+      console.error('Error approving order:', error);
+      toast.error('Failed to approve order');
     }
   });
 
@@ -244,6 +326,27 @@ const AdminDashboard = () => {
     updateOrderStatusMutation.mutate({ orderId, status: newStatus, orderNumber, userId });
   };
 
+  const openApprovalDialog = (order: any) => {
+    setSelectedOrder(order);
+    setEstimatedDelivery('');
+    setStaffNotes('');
+    setIsApprovalDialogOpen(true);
+  };
+
+  const handleApproveOrder = () => {
+    if (!selectedOrder || !estimatedDelivery) {
+      toast.error('Please enter estimated delivery time');
+      return;
+    }
+    approveOrderMutation.mutate({
+      orderId: selectedOrder.id,
+      orderNumber: selectedOrder.order_number,
+      userId: selectedOrder.user_id,
+      estimatedDelivery,
+      staffNotes
+    });
+  };
+
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -272,11 +375,12 @@ const AdminDashboard = () => {
   const totalUsers = users?.length || 0;
   const totalOrders = orders?.length || 0;
   const totalRevenue = transactions?.reduce((sum, t) => t.status === 'completed' ? sum + Number(t.amount) : sum, 0) || 0;
-  const pendingOrders = orders?.filter(o => !['delivered', 'cancelled'].includes(o.status)).length || 0;
+  const pendingOrders = orders?.filter(o => o.status === 'draft').length || 0;
+  const activeOrders = orders?.filter(o => !['delivered', 'cancelled', 'draft'].includes(o.status)).length || 0;
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      draft: 'bg-muted text-muted-foreground',
+      draft: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
       scheduled: 'bg-blue-500/10 text-blue-500',
       picked_up: 'bg-purple-500/10 text-purple-500',
       washing: 'bg-cyan-500/10 text-cyan-500',
@@ -308,6 +412,14 @@ const AdminDashboard = () => {
     return userProfile?.email || 'Unknown';
   };
 
+  const getUserName = (userId: string) => {
+    const userProfile = users?.find(u => u.id === userId);
+    if (userProfile?.first_name || userProfile?.last_name) {
+      return `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim();
+    }
+    return userProfile?.email?.split('@')[0] || 'Unknown';
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -331,7 +443,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
@@ -356,6 +468,30 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          <Card className="border-yellow-500/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-yellow-600">Pending Approval</CardTitle>
+              <Clock className="h-4 w-4 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {ordersLoading ? <Skeleton className="h-8 w-16" /> : pendingOrders}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Orders</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                {ordersLoading ? <Skeleton className="h-8 w-16" /> : activeOrders}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
@@ -367,19 +503,59 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Orders</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        {/* Pending Approval Orders */}
+        {pendingOrders > 0 && (
+          <Card className="border-yellow-500/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <CardTitle className="text-yellow-600">Pending Cash Payment Approval</CardTitle>
+                  <CardDescription>Orders waiting for cash payment confirmation</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {ordersLoading ? <Skeleton className="h-8 w-16" /> : pendingOrders}
+              <div className="space-y-4">
+                {orders?.filter(o => o.status === 'draft').map(order => (
+                  <div key={order.id} className="flex items-center justify-between p-4 border border-yellow-500/30 rounded-lg bg-yellow-500/5">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-yellow-500/10 rounded-lg">
+                        <Package className="h-5 w-5 text-yellow-600" />
+                      </div>
+                      <div>
+                        <div className="font-semibold">{order.order_number}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {getUserName(order.user_id)} • {order.service_type.replace('_', ' ')}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {format(new Date(order.created_at), 'MMM d, yyyy h:mm a')}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-lg font-bold">₦{Number(order.total).toLocaleString()}</div>
+                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                          Pending Payment
+                        </Badge>
+                      </div>
+                      <Button 
+                        onClick={() => openApprovalDialog(order)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
         {/* Order Management */}
         <Card>
@@ -413,7 +589,9 @@ const AdminDashboard = () => {
                       <TableHead>Service</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Notes</TableHead>
                       <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -443,8 +621,22 @@ const AdminDashboard = () => {
                             </SelectContent>
                           </Select>
                         </TableCell>
+                        <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+                          {order.staff_notes || '-'}
+                        </TableCell>
                         <TableCell>
                           {format(new Date(order.created_at), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          {order.status === 'draft' && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => openApprovalDialog(order)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              Approve
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -506,37 +698,33 @@ const AdminDashboard = () => {
                                 {role}
                               </Badge>
                             ) : (
-                              <span className="text-muted-foreground text-sm">No role</span>
+                              <span className="text-muted-foreground text-sm">Customer</span>
                             )}
                           </TableCell>
                           <TableCell>
                             {format(new Date(userItem.created_at), 'MMM d, yyyy')}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openRoleDialog(
-                                  userItem.id, 
-                                  userItem.email, 
-                                  `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim()
-                                )}
-                              >
-                                {role ? 'Change Role' : 'Assign Role'}
-                              </Button>
-                              {role && !isCurrentUser && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => handleRemoveRole(userItem.id)}
-                                  disabled={removeRoleMutation.isPending}
-                                >
-                                  Remove
-                                </Button>
+                          <TableCell className="text-right space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openRoleDialog(
+                                userItem.id, 
+                                userItem.email, 
+                                `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim()
                               )}
-                            </div>
+                            >
+                              {role ? 'Change Role' : 'Assign Role'}
+                            </Button>
+                            {role && !isCurrentUser && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveRole(userItem.id)}
+                              >
+                                Remove
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -555,13 +743,14 @@ const AdminDashboard = () => {
           <DialogHeader>
             <DialogTitle>Assign Role</DialogTitle>
             <DialogDescription>
-              Assign a role to {selectedUser?.name || selectedUser?.email}
+              Assign a system role to {selectedUser?.name || selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
+            <Label htmlFor="role-select" className="mb-2 block">Select Role</Label>
             <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
+              <SelectTrigger id="role-select">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">User</SelectItem>
@@ -569,18 +758,78 @@ const AdminDashboard = () => {
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground mt-2">
-              {selectedRole === 'admin' && 'Full access to admin dashboard and all management features.'}
-              {selectedRole === 'moderator' && 'Can moderate content and assist with user management.'}
-              {selectedRole === 'user' && 'Standard user access with no administrative privileges.'}
-            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAssignRole} disabled={assignRoleMutation.isPending}>
+            <Button 
+              onClick={handleAssignRole}
+              disabled={assignRoleMutation.isPending}
+            >
               {assignRoleMutation.isPending ? 'Assigning...' : 'Assign Role'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Approval Dialog */}
+      <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Order - {selectedOrder?.order_number}</DialogTitle>
+            <DialogDescription>
+              Confirm cash payment received and set estimated delivery time for customer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Customer:</span>
+                <span className="font-medium">{selectedOrder && getUserName(selectedOrder.user_id)}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Service:</span>
+                <span className="font-medium capitalize">{selectedOrder?.service_type?.replace('_', ' ')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount:</span>
+                <span className="font-bold text-lg">₦{Number(selectedOrder?.total || 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estimated-delivery">Estimated Delivery Time *</Label>
+              <Input
+                id="estimated-delivery"
+                placeholder="e.g., 2-3 days, Tomorrow by 5pm"
+                value={estimatedDelivery}
+                onChange={(e) => setEstimatedDelivery(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="staff-notes">Additional Notes (Optional)</Label>
+              <Textarea
+                id="staff-notes"
+                placeholder="Any special instructions or notes for the customer..."
+                value={staffNotes}
+                onChange={(e) => setStaffNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsApprovalDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleApproveOrder}
+              disabled={approveOrderMutation.isPending || !estimatedDelivery}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {approveOrderMutation.isPending ? 'Approving...' : 'Approve & Notify Customer'}
             </Button>
           </DialogFooter>
         </DialogContent>
