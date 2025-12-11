@@ -175,17 +175,39 @@ const AdminDashboard = () => {
 
   // Mutation to update order status
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
+    mutationFn: async ({ orderId, status, orderNumber, userId }: { orderId: string; status: OrderStatus; orderNumber: string; userId: string }) => {
       const { error } = await supabase
         .from('orders')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Get user email for notification
+      const userProfile = users?.find(u => u.id === userId);
+      if (userProfile?.email) {
+        // Send email notification
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-order-status-email', {
+            body: {
+              orderId,
+              newStatus: status,
+              userEmail: userProfile.email,
+              userName: userProfile.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : undefined,
+              orderNumber
+            }
+          });
+          if (emailError) {
+            console.error('Email notification failed:', emailError);
+          }
+        } catch (emailErr) {
+          console.error('Email notification error:', emailErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
-      toast.success('Order status updated');
+      toast.success('Order status updated and notification sent');
     },
     onError: (error) => {
       console.error('Error updating order:', error);
@@ -218,8 +240,8 @@ const AdminDashboard = () => {
     removeRoleMutation.mutate(userId);
   };
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    updateOrderStatusMutation.mutate({ orderId, status: newStatus });
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus, orderNumber: string, userId: string) => {
+    updateOrderStatusMutation.mutate({ orderId, status: newStatus, orderNumber, userId });
   };
 
   if (authLoading || adminLoading) {
@@ -406,7 +428,7 @@ const AdminDashboard = () => {
                         <TableCell>
                           <Select
                             value={order.status}
-                            onValueChange={(value) => handleStatusChange(order.id, value as OrderStatus)}
+                            onValueChange={(value) => handleStatusChange(order.id, value as OrderStatus, order.order_number, order.user_id)}
                             disabled={updateOrderStatusMutation.isPending}
                           >
                             <SelectTrigger className={`w-[160px] h-8 text-xs ${getStatusColor(order.status)}`}>
