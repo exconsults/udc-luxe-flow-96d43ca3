@@ -37,7 +37,7 @@ class SyncService {
   // Sync all pending changes
   async syncAll(): Promise<void> {
     if (!this.isOnline() || this.syncInProgress) {
-      console.log('Sync skipped: offline or already syncing');
+      // Only log once per minute to reduce noise
       return;
     }
 
