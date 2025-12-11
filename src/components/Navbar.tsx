@@ -9,17 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, LogOut, Settings } from "lucide-react";
+import { Menu, User, LogOut, Settings, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import udcLogo from "@/assets/udc-logo.png";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
+  const { isAdmin } = useAdminCheck();
 
   useEffect(() => {
     if (user) {
@@ -77,6 +79,13 @@ const Navbar = () => {
             <Link to="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Pricing
             </Link>
+            
+            {isAdmin && (
+              <Link to="/admin" className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
             
             {user ? (
               <DropdownMenu>
