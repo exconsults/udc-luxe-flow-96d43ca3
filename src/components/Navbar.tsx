@@ -9,7 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, LogOut, Settings, Shield } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Menu, User, LogOut, Settings, Shield, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -21,6 +28,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAdmin } = useAdminCheck();
 
   useEffect(() => {
@@ -45,6 +53,7 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     await signOut();
+    setMobileMenuOpen(false);
     navigate('/');
   };
 
@@ -53,6 +62,11 @@ const Navbar = () => {
     const first = profile.first_name?.charAt(0) || "";
     const last = profile.last_name?.charAt(0) || "";
     return `${first}${last}`.toUpperCase() || "U";
+  };
+
+  const handleMobileNavigation = (path: string) => {
+    setMobileMenuOpen(false);
+    navigate(path);
   };
 
   return (
@@ -141,10 +155,122 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors">
-            <Menu className="h-6 w-6" />
-          </button>
+          {/* Mobile Menu */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <button className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors">
+                <Menu className="h-6 w-6" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <img src={udcLogo} alt="UDC Logo" className="h-8 w-8" />
+                  <span>UDC Menu</span>
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-6">
+                {/* User Info */}
+                {user && profile && (
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <Avatar className="h-10 w-10 border-2 border-primary/20">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="text-sm font-medium">
+                        {profile?.first_name && profile?.last_name 
+                          ? `${profile.first_name} ${profile.last_name}`
+                          : user?.email?.split('@')[0] || 'Account'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{user?.email}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Links */}
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleMobileNavigation('/services')}
+                    className="flex items-center gap-3 p-3 text-left hover:bg-muted rounded-lg transition-colors"
+                  >
+                    Services
+                  </button>
+                  <button
+                    onClick={() => handleMobileNavigation('/how-it-works')}
+                    className="flex items-center gap-3 p-3 text-left hover:bg-muted rounded-lg transition-colors"
+                  >
+                    How It Works
+                  </button>
+                  <button
+                    onClick={() => handleMobileNavigation('/pricing')}
+                    className="flex items-center gap-3 p-3 text-left hover:bg-muted rounded-lg transition-colors"
+                  >
+                    Pricing
+                  </button>
+
+                  {/* Admin Link - Only visible to admins */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleMobileNavigation('/admin')}
+                      className="flex items-center gap-3 p-3 text-left text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium"
+                    >
+                      <Shield className="h-5 w-5" />
+                      Admin Panel
+                    </button>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border my-2" />
+
+                {/* User Actions */}
+                {user ? (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => handleMobileNavigation('/dashboard')}
+                      className="flex items-center gap-3 p-3 text-left hover:bg-muted rounded-lg transition-colors"
+                    >
+                      <Settings className="h-5 w-5" />
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigation('/profile')}
+                      className="flex items-center gap-3 p-3 text-left hover:bg-muted rounded-lg transition-colors"
+                    >
+                      <User className="h-5 w-5" />
+                      Profile Settings
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-3 p-3 text-left text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleMobileNavigation('/auth')}
+                      className="w-full"
+                    >
+                      Sign In
+                    </Button>
+                    <Button
+                      onClick={() => handleMobileNavigation('/auth')}
+                      className="w-full bg-primary hover:bg-primary/90"
+                    >
+                      Book Pickup Now
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>
