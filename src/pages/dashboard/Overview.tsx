@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Clock, Award, MapPin, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Overview = () => {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeOrders: 0,
     completedOrders: 0,
@@ -26,20 +28,22 @@ const Overview = () => {
   const loadData = async () => {
     if (!user) return;
 
-    // Load orders
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    setLoading(true);
+    try {
+      // Load orders
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-    // Load profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('loyalty_points')
-      .eq('id', user.id)
-      .single();
+      // Load profile - use maybeSingle to avoid errors when no profile exists
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('loyalty_points')
+        .eq('id', user.id)
+        .maybeSingle();
 
     // Load addresses count
     const { count: addressCount } = await supabase
@@ -53,20 +57,64 @@ const Overview = () => {
       .select('points')
       .eq('user_id', user.id);
 
-    const totalRewards = rewards?.reduce((sum, r) => sum + r.points, 0) || 0;
-    const activeCount = orders?.filter(o => !['delivered', 'cancelled'].includes(o.status)).length || 0;
-    const completedCount = orders?.filter(o => o.status === 'delivered').length || 0;
+      const totalRewards = rewards?.reduce((sum, r) => sum + r.points, 0) || 0;
+      const activeCount = orders?.filter(o => !['delivered', 'cancelled'].includes(o.status)).length || 0;
+      const completedCount = orders?.filter(o => o.status === 'delivered').length || 0;
 
-    setStats({
-      activeOrders: activeCount,
-      completedOrders: completedCount,
-      loyaltyPoints: profile?.loyalty_points || 0,
-      savedAddresses: addressCount || 0,
-      totalRewards,
-    });
+      setStats({
+        activeOrders: activeCount,
+        completedOrders: completedCount,
+        loyaltyPoints: profile?.loyalty_points || 0,
+        savedAddresses: addressCount || 0,
+        totalRewards,
+      });
 
-    setRecentOrders(orders || []);
+      setRecentOrders(orders || []);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <Skeleton className="h-9 w-48 mb-2" />
+          <Skeleton className="h-5 w-72" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-3">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-9 w-12" />
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
@@ -171,7 +219,7 @@ const Overview = () => {
                     <div>
                       <div className="font-semibold text-foreground">{order.order_number}</div>
                       <div className="text-sm text-muted-foreground">
-                        {order.service_type} • ${order.total}
+                        {order.service_type.replace('_', ' ')} • ₦{Number(order.total).toLocaleString()}
                       </div>
                     </div>
                   </div>
