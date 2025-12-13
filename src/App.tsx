@@ -9,6 +9,7 @@ import { DashboardLayout } from "./components/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import NewOrder from "./pages/dashboard/NewOrder";
 import OrderHistory from "./pages/dashboard/OrderHistory";
+import OrderTracking from "./pages/dashboard/OrderTracking";
 import Rewards from "./pages/dashboard/Rewards";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -37,6 +38,7 @@ const App = () => (
             <Route index element={<Overview />} />
             <Route path="new-order" element={<NewOrder />} />
             <Route path="history" element={<OrderHistory />} />
+            <Route path="track/:orderId" element={<OrderTracking />} />
             <Route path="rewards" element={<Rewards />} />
           </Route>
           <Route path="/profile" element={<Profile />} />

@@ -172,7 +172,8 @@ const OrderHistory = () => {
           ) : (
             <div className="grid gap-6">
               {activeOrders.map((order) => (
-                <Card key={order.id} className="border-2 hover:border-primary/50 transition-all">
+                <Link key={order.id} to={`/dashboard/track/${order.id}`}>
+                  <Card className="border-2 hover:border-primary/50 transition-all cursor-pointer">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
@@ -300,6 +301,7 @@ const OrderHistory = () => {
                     )}
                   </CardContent>
                 </Card>
+              </Link>
               ))}
             </div>
           )}
