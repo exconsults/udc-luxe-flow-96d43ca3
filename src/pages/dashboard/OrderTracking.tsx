@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
   Package, Clock, CheckCircle2, Truck, XCircle, MapPin, 
-  ArrowLeft, RefreshCw, FileText, Calendar
+  ArrowLeft, RefreshCw, FileText, Calendar, QrCode, Download
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { QRCodeSVG } from "qrcode.react";
 
 const orderSteps = [
   { key: 'draft', label: 'Pending Payment', icon: FileText },
@@ -317,6 +318,60 @@ const OrderTracking = () => {
               <div className="text-sm text-muted-foreground">{order.special_instructions}</div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* QR Code Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <QrCode className="h-5 w-5" />
+            Order QR Code
+          </CardTitle>
+          <CardDescription>
+            Share or print this QR code to quickly access your order tracking
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+          <div className="p-4 bg-white rounded-xl shadow-sm">
+            <QRCodeSVG
+              value={window.location.href}
+              size={180}
+              level="H"
+              includeMargin
+            />
+          </div>
+          <div className="text-center">
+            <div className="font-mono text-sm text-muted-foreground mb-2">
+              {order.order_number}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const svg = document.querySelector('.qr-code-container svg');
+                if (svg) {
+                  const svgData = new XMLSerializer().serializeToString(svg);
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const img = new Image();
+                  img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx?.drawImage(img, 0, 0);
+                    const link = document.createElement('a');
+                    link.download = `order-${order.order_number}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                  };
+                  img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download QR Code
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
