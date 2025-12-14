@@ -26,22 +26,27 @@ export function DashboardLayout() {
       navigate('/auth');
       return;
     }
+    
+    let isMounted = true;
+    
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (isMounted && data) {
+        setProfile(data);
+      }
+    };
+    
     loadProfile();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user, navigate]);
-
-  const loadProfile = async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (data) {
-      setProfile(data);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();

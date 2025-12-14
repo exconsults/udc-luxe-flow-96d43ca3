@@ -30,36 +30,63 @@ const OrderTracking = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user && orderId) {
-      loadOrder();
-      // Set up real-time subscription
-      const channel = supabase
-        .channel(`order-${orderId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'orders',
-            filter: `id=eq.${orderId}`
-          },
-          (payload) => {
+    if (!user || !orderId) {
+      setLoading(false);
+      return;
+    }
+    
+    let isMounted = true;
+    
+    const loadOrderData = async () => {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (isMounted) {
+        if (data) {
+          setOrder(data);
+        }
+        setLoading(false);
+      }
+    };
+    
+    loadOrderData();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`order-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`
+        },
+        (payload) => {
+          if (isMounted) {
             setOrder(payload.new);
           }
-        )
-        .subscribe();
+        }
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
   }, [user, orderId]);
 
   const loadOrder = async () => {
     if (!user || !orderId) return;
     setLoading(true);
     
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('orders')
       .select('*')
       .eq('id', orderId)

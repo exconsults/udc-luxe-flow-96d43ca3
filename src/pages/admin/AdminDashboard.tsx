@@ -91,7 +91,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin
+    enabled: !!user && isAdmin
   });
 
   // Fetch all user roles
@@ -105,7 +105,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data as UserRole[];
     },
-    enabled: isAdmin
+    enabled: !!user && isAdmin
   });
 
   // Fetch all orders
@@ -120,7 +120,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin
+    enabled: !!user && isAdmin
   });
 
   // Fetch all transactions
@@ -135,7 +135,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin
+    enabled: !!user && isAdmin
   });
 
   // Mutation to assign role

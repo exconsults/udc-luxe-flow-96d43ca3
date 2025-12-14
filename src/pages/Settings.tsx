@@ -60,50 +60,60 @@ const Settings = () => {
       navigate("/auth");
       return;
     }
-    loadSettings();
-  }, [user, navigate]);
+    
+    let isMounted = true;
 
-  const loadSettings = async () => {
-    if (!user) return;
+    const loadSettings = async () => {
+      setLoading(true);
+      setError(null);
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from("user_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      if (data) {
-        setSettings({
-          email_notifications: data.email_notifications,
-          sms_notifications: data.sms_notifications,
-          push_notifications: data.push_notifications,
-          order_updates: data.order_updates,
-          promotional_emails: data.promotional_emails,
-          theme: data.theme,
-          language: data.language,
-        });
-      } else {
-        // Create default settings for user
-        const { error: insertError } = await supabase
+      try {
+        const { data, error: fetchError } = await supabase
           .from("user_settings")
-          .insert([{ user_id: user.id, ...defaultSettings }]);
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-        if (insertError) throw insertError;
-        setSettings(defaultSettings);
+        if (!isMounted) return;
+
+        if (fetchError) throw fetchError;
+
+        if (data) {
+          setSettings({
+            email_notifications: data.email_notifications,
+            sms_notifications: data.sms_notifications,
+            push_notifications: data.push_notifications,
+            order_updates: data.order_updates,
+            promotional_emails: data.promotional_emails,
+            theme: data.theme,
+            language: data.language,
+          });
+        } else {
+          // Create default settings for user
+          const { error: insertError } = await supabase
+            .from("user_settings")
+            .insert([{ user_id: user.id, ...defaultSettings }]);
+
+          if (!isMounted) return;
+          if (insertError) throw insertError;
+          setSettings(defaultSettings);
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          console.error("Error loading settings:", err);
+          setError("Failed to load settings. Please refresh the page.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } catch (err: any) {
-      console.error("Error loading settings:", err);
-      setError("Failed to load settings. Please refresh the page.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    
+    loadSettings();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user, navigate]);
 
   const updateSetting = async (key: keyof UserSettings, value: boolean | string) => {
     if (!user) return;
