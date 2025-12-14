@@ -24,12 +24,23 @@ const Rewards = () => {
   const [generatingCode, setGeneratingCode] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    let isMounted = true;
+    
     const init = async () => {
-      if (!user) return;
       await ensureReferralCode();
-      await loadData();
+      if (isMounted) await loadData();
     };
+    
     init();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const ensureReferralCode = async () => {

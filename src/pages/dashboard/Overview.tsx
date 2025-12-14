@@ -20,62 +20,71 @@ const Overview = () => {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
-
-  const loadData = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      // Load orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      // Load profile - use maybeSingle to avoid errors when no profile exists
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('loyalty_points')
-        .eq('id', user.id)
-        .maybeSingle();
-
-    // Load addresses count
-    const { count: addressCount } = await supabase
-      .from('addresses')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-
-    // Load rewards
-    const { data: rewards } = await supabase
-      .from('rewards')
-      .select('points')
-      .eq('user_id', user.id);
-
-      const totalRewards = rewards?.reduce((sum, r) => sum + r.points, 0) || 0;
-      const activeCount = orders?.filter(o => !['delivered', 'cancelled'].includes(o.status)).length || 0;
-      const completedCount = orders?.filter(o => o.status === 'delivered').length || 0;
-
-      setStats({
-        activeOrders: activeCount,
-        completedOrders: completedCount,
-        loyaltyPoints: profile?.loyalty_points || 0,
-        savedAddresses: addressCount || 0,
-        totalRewards,
-      });
-
-      setRecentOrders(orders || []);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
+    if (!user) {
       setLoading(false);
+      return;
     }
-  };
+    
+    let isMounted = true;
+
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Load orders
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // Load profile - use maybeSingle to avoid errors when no profile exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('loyalty_points')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        // Load addresses count
+        const { count: addressCount } = await supabase
+          .from('addresses')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // Load rewards
+        const { data: rewards } = await supabase
+          .from('rewards')
+          .select('points')
+          .eq('user_id', user.id);
+
+        if (!isMounted) return;
+
+        const totalRewards = rewards?.reduce((sum, r) => sum + r.points, 0) || 0;
+        const activeCount = orders?.filter(o => !['delivered', 'cancelled'].includes(o.status)).length || 0;
+        const completedCount = orders?.filter(o => o.status === 'delivered').length || 0;
+
+        setStats({
+          activeOrders: activeCount,
+          completedOrders: completedCount,
+          loyaltyPoints: profile?.loyalty_points || 0,
+          savedAddresses: addressCount || 0,
+          totalRewards,
+        });
+
+        setRecentOrders(orders || []);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   if (loading) {
     return (

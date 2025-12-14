@@ -15,35 +15,44 @@ const OrderHistory = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadOrders();
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  }, [user]);
-
-  const loadOrders = async () => {
-    if (!user) return;
-
-    setLoading(true);
     
-    // Load all orders
-    const { data: allData } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    let isMounted = true;
 
-    // Load active orders (not delivered or cancelled)
-    const { data: activeData } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', user.id)
-      .not('status', 'in', '("delivered","cancelled")')
-      .order('created_at', { ascending: false });
+    const loadOrders = async () => {
+      setLoading(true);
+      
+      // Load all orders
+      const { data: allData } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    setAllOrders(allData || []);
-    setActiveOrders(activeData || []);
-    setLoading(false);
-  };
+      // Load active orders (not delivered or cancelled)
+      const { data: activeData } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .not('status', 'in', '("delivered","cancelled")')
+        .order('created_at', { ascending: false });
+
+      if (!isMounted) return;
+      
+      setAllOrders(allData || []);
+      setActiveOrders(activeData || []);
+      setLoading(false);
+    };
+    
+    loadOrders();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
