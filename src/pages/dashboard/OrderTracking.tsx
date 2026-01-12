@@ -39,19 +39,25 @@ const OrderTracking = () => {
     
     const loadOrderData = async () => {
       setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .eq('user_id', user.id)
-        .maybeSingle();
 
-      if (isMounted) {
-        if (data) {
-          setOrder(data);
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (isMounted) {
+          setOrder(data ?? null);
         }
-        setLoading(false);
+      } catch (err) {
+        console.error('Error loading order:', err);
+        if (isMounted) setOrder(null);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
     
@@ -85,18 +91,25 @@ const OrderTracking = () => {
   const loadOrder = async () => {
     if (!user || !orderId) return;
     setLoading(true);
-    
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .eq('user_id', user.id)
-      .maybeSingle();
 
-    if (data) {
-      setOrder(data);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setOrder(data);
+      }
+    } catch (err) {
+      console.error('Error refreshing order:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getStepIndex = (status: string) => {

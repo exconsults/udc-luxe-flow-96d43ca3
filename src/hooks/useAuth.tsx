@@ -92,25 +92,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      // If no online session, try to load from cache
-      if (!session && !navigator.onLine) {
-        const cachedSession = await offlineStorage.getAuth('session');
-        if (cachedSession) {
-          setSession(cachedSession);
-          setUser(cachedSession.user);
-          toast({
-            title: "Offline mode",
-            description: "Using cached session",
-          });
+        // If no online session, try to load from cache
+        if (!session && !navigator.onLine) {
+          const cachedSession = await offlineStorage.getAuth('session');
+          if (cachedSession) {
+            setSession(cachedSession);
+            setUser(cachedSession.user);
+            toast({
+              title: "Offline mode",
+              description: "Using cached session",
+            });
+          }
         }
-      }
-
-      setIsLoading(false);
-    });
+      })
+      .catch((err) => {
+        console.error('Error getting session:', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
 
     return () => {
       subscription.unsubscribe();
