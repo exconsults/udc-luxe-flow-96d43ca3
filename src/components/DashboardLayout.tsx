@@ -17,36 +17,44 @@ import {
 import { User, Settings, LogOut } from "lucide-react";
 
 export function DashboardLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
+    if (isLoading) return;
+
     if (!user) {
       navigate('/auth');
       return;
     }
-    
-    let isMounted = true;
-    
-    const loadProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
 
-      if (isMounted && data) {
-        setProfile(data);
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (isMounted && data) {
+          setProfile(data);
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
       }
     };
-    
+
     loadProfile();
-    
+
     return () => {
       isMounted = false;
     };
-  }, [user, navigate]);
+  }, [user, isLoading, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -59,6 +67,20 @@ export function DashboardLayout() {
     const last = profile.last_name?.charAt(0) || "";
     return `${first}${last}`.toUpperCase() || "U";
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <span
+            className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin"
+            aria-hidden="true"
+          />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) return null;
 

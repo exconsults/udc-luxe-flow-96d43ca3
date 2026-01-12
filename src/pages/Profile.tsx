@@ -76,90 +76,101 @@ const Profile = () => {
     let isMounted = true;
     
     const loadData = async () => {
-      // Load profile
-      setLoadingProfile(true);
-      setProfileError(null);
+      try {
+        // Load profile
+        setLoadingProfile(true);
+        setProfileError(null);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      if (error) {
-        console.error('Error loading profile:', error);
-        setProfileError('Failed to load profile. Please refresh the page.');
-        setLoadingProfile(false);
-      } else if (data) {
-        setProfile({
-          firstName: data.first_name || "",
-          lastName: data.last_name || "",
-          phone: data.phone || "",
-          email: user.email || data.email || "",
-          avatarUrl: data.avatar_url || "",
-        });
-        setLoadingProfile(false);
-      } else {
-        // Ensure a profile row exists for this user
-        try {
-          const first_name = (user.user_metadata as any)?.first_name || "";
-          const last_name = (user.user_metadata as any)?.last_name || "";
-          await supabase
-            .from('profiles')
-            .upsert({
-              id: user.id,
-              email: user.email,
-              first_name,
-              last_name,
-              phone: null,
-            }, { onConflict: 'id' });
+        if (error) {
+          console.error('Error loading profile:', error);
+          setProfileError('Failed to load profile. Please refresh the page.');
+        } else if (data) {
+          setProfile({
+            firstName: data.first_name || "",
+            lastName: data.last_name || "",
+            phone: data.phone || "",
+            email: user.email || data.email || "",
+            avatarUrl: data.avatar_url || "",
+          });
+        } else {
+          // Ensure a profile row exists for this user
+          try {
+            const first_name = (user.user_metadata as any)?.first_name || "";
+            const last_name = (user.user_metadata as any)?.last_name || "";
+            await supabase
+              .from('profiles')
+              .upsert(
+                {
+                  id: user.id,
+                  email: user.email,
+                  first_name,
+                  last_name,
+                  phone: null,
+                },
+                { onConflict: 'id' }
+              );
 
-          if (isMounted) {
-            setProfile({
-              firstName: first_name,
-              lastName: last_name,
-              phone: "",
-              email: user.email || "",
-              avatarUrl: "",
-            });
-          }
-        } catch (e) {
-          console.warn('Could not create profile row:', e);
-          if (isMounted) {
-            setProfile({
-              firstName: "",
-              lastName: "",
-              phone: "",
-              email: user.email || "",
-              avatarUrl: "",
-            });
+            if (isMounted) {
+              setProfile({
+                firstName: first_name,
+                lastName: last_name,
+                phone: "",
+                email: user.email || "",
+                avatarUrl: "",
+              });
+            }
+          } catch (e) {
+            console.warn('Could not create profile row:', e);
+            if (isMounted) {
+              setProfile({
+                firstName: "",
+                lastName: "",
+                phone: "",
+                email: user.email || "",
+                avatarUrl: "",
+              });
+            }
           }
         }
-        if (isMounted) setLoadingProfile(false);
+
+        // Load addresses
+        if (!isMounted) return;
+        setLoadingAddresses(true);
+        setAddressError(null);
+
+        const { data: addressData, error: addressError } = await supabase
+          .from('addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false });
+
+        if (!isMounted) return;
+
+        if (addressError) {
+          console.error('Error loading addresses:', addressError);
+          setAddressError('Failed to load addresses. Please try again.');
+        } else {
+          setAddresses(addressData || []);
+        }
+      } catch (err) {
+        console.error('Error loading profile page data:', err);
+        if (!isMounted) return;
+        setProfileError('Failed to load account data. Please refresh the page.');
+        setAddressError('Failed to load addresses. Please refresh the page.');
+      } finally {
+        if (isMounted) {
+          setLoadingProfile(false);
+          setLoadingAddresses(false);
+        }
       }
-
-      // Load addresses
-      if (!isMounted) return;
-      setLoadingAddresses(true);
-      setAddressError(null);
-
-      const { data: addressData, error: addressError } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_default', { ascending: false });
-
-      if (!isMounted) return;
-
-      if (addressError) {
-        console.error('Error loading addresses:', addressError);
-        setAddressError('Failed to load addresses. Please try again.');
-      } else {
-        setAddresses(addressData || []);
-      }
-      setLoadingAddresses(false);
     };
     
     loadData();

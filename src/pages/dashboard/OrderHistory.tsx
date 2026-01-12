@@ -24,27 +24,39 @@ const OrderHistory = () => {
 
     const loadOrders = async () => {
       setLoading(true);
-      
-      // Load all orders
-      const { data: allData } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
 
-      // Load active orders (not delivered or cancelled)
-      const { data: activeData } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .not('status', 'in', '("delivered","cancelled")')
-        .order('created_at', { ascending: false });
+      try {
+        // Load all orders
+        const { data: allData, error: allError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (!isMounted) return;
-      
-      setAllOrders(allData || []);
-      setActiveOrders(activeData || []);
-      setLoading(false);
+        if (allError) throw allError;
+
+        // Load active orders (not delivered or cancelled)
+        const { data: activeData, error: activeError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .not('status', 'in', '("delivered","cancelled")')
+          .order('created_at', { ascending: false });
+
+        if (activeError) throw activeError;
+
+        if (!isMounted) return;
+
+        setAllOrders(allData || []);
+        setActiveOrders(activeData || []);
+      } catch (err) {
+        console.error('Error loading orders:', err);
+        if (!isMounted) return;
+        setAllOrders([]);
+        setActiveOrders([]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
     
     loadOrders();
