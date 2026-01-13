@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { User, Settings, LogOut } from "lucide-react";
+import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 
 export function DashboardLayout() {
   const { user, signOut, isLoading } = useAuth();
@@ -92,7 +93,10 @@ export function DashboardLayout() {
         <div className="flex-1 flex flex-col w-full">
           {/* Top Header */}
           <header className="h-16 border-b border-border bg-card sticky top-0 z-40 flex items-center justify-between px-6">
-            <SidebarTrigger />
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <NetworkStatusIndicator />
+            </div>
             
             {/* User Profile Dropdown */}
             <DropdownMenu>
