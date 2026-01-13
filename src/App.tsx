@@ -11,6 +11,7 @@ import NewOrder from "./pages/dashboard/NewOrder";
 import OrderHistory from "./pages/dashboard/OrderHistory";
 import OrderTracking from "./pages/dashboard/OrderTracking";
 import Rewards from "./pages/dashboard/Rewards";
+import UserGuide from "./pages/dashboard/UserGuide";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Services from "./pages/Services";
@@ -21,6 +22,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactUs from "./pages/ContactUs";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminGuide from "./pages/admin/AdminGuide";
 import NotFound from "./pages/NotFound";
 import TrackOrder from "./pages/TrackOrder";
 
@@ -41,6 +43,7 @@ const App = () => (
             <Route path="history" element={<OrderHistory />} />
             <Route path="track/:orderId" element={<OrderTracking />} />
             <Route path="rewards" element={<Rewards />} />
+            <Route path="guide" element={<UserGuide />} />
           </Route>
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
@@ -53,6 +56,8 @@ const App = () => (
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/guide" element={<AdminGuide />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
