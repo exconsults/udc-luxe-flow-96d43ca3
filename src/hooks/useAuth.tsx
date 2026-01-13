@@ -25,8 +25,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initialize offline storage
-    offlineStorage.init();
+    // Initialize offline storage (non-blocking; some browsers can block IndexedDB)
+    void offlineStorage.init().catch((err) => {
+      console.warn("Offline storage init failed; continuing without cache.", err);
+    });
+
+    // Safety: never stay stuck on a loading screen forever
+    const loadingTimeout = window.setTimeout(() => {
+      setIsLoading(false);
+      console.warn("Auth initialization timed out; forcing UI to render.");
+    }, 8000);
 
     // Handle online/offline status
     const handleOnline = () => {
@@ -58,34 +66,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Cache session offline
-          await offlineStorage.saveAuth('session', session);
-          // Start auto sync
+          // Start auto sync (doesn't block UI)
           syncService.startAutoSync();
 
-          // Fetch and cache profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
+          // Cache session/profile in the background (don't let IndexedDB issues block rendering)
+          void offlineStorage.saveAuth("session", session).catch((err) => {
+            console.warn("Failed to cache session offline:", err);
+          });
 
-          if (profile) {
-            await offlineStorage.saveProfile({
-              id: profile.id,
-              email: profile.email,
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              phone: profile.phone,
-              role: profile.role,
-              loyaltyPoints: profile.loyalty_points,
-              createdAt: profile.created_at,
-              updatedAt: profile.updated_at,
-            });
-          }
+          void (async () => {
+            try {
+              const { data: profile, error } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", session.user.id)
+                .maybeSingle();
+
+              if (error) throw error;
+
+              if (profile) {
+                await offlineStorage.saveProfile({
+                  id: profile.id,
+                  email: profile.email,
+                  firstName: profile.first_name,
+                  lastName: profile.last_name,
+                  phone: profile.phone,
+                  role: profile.role,
+                  loyaltyPoints: profile.loyalty_points,
+                  createdAt: profile.created_at,
+                  updatedAt: profile.updated_at,
+                });
+              }
+            } catch (err) {
+              console.warn("Failed to cache profile offline (non-blocking):", err);
+            }
+          })();
         } else {
-          // Clear offline data on signout
-          await offlineStorage.clearAuth();
+          // Clear offline data on signout (non-blocking)
+          void offlineStorage.clearAuth().catch((err) => {
+            console.warn("Failed to clear offline auth cache:", err);
+          });
           syncService.stopAutoSync();
         }
       }
@@ -115,10 +135,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error getting session:', err);
       })
       .finally(() => {
+        window.clearTimeout(loadingTimeout);
         setIsLoading(false);
       });
 
     return () => {
+      window.clearTimeout(loadingTimeout);
       subscription.unsubscribe();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
