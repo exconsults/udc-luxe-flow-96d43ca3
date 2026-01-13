@@ -6,7 +6,8 @@ import {
   Award, 
   Settings,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,6 +30,7 @@ const navItems = [
   { title: "New Order", url: "/dashboard/new-order", icon: PlusCircle },
   { title: "My Orders", url: "/dashboard/history", icon: History },
   { title: "Rewards", url: "/dashboard/rewards", icon: Award },
+  { title: "User Guide", url: "/dashboard/guide", icon: BookOpen },
 ];
 
 export function AppSidebar() {
@@ -89,7 +91,7 @@ export function AppSidebar() {
         {/* Admin Section */}
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/70 font-semibold">Admin</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -97,15 +99,32 @@ export function AppSidebar() {
                     <NavLink
                       to="/admin"
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
                           isActive
-                            ? "bg-primary text-primary-foreground font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20"
                         }`
                       }
                     >
                       <ShieldCheck className="h-5 w-5 shrink-0" />
                       <span>Admin Panel</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin/guide"
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        }`
+                      }
+                    >
+                      <BookOpen className="h-5 w-5 shrink-0" />
+                      <span>Admin Guide</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
