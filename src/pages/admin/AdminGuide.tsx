@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import VideoTutorial from "@/components/VideoTutorial";
 import { 
   Download, 
   Users, 
@@ -18,7 +20,9 @@ import {
   CheckCircle,
   AlertTriangle,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  PlayCircle,
+  BookOpen
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 
@@ -100,15 +104,84 @@ const AdminGuide = () => {
         </Button>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-200px)]">
-        <div ref={contentRef} className="space-y-6 pr-4">
-          {/* Header for PDF */}
-          <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 rounded-lg text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <ShieldCheck className="h-8 w-8" />
-            </div>
-            <h1 className="text-2xl font-bold">UDC Laundry Service</h1>
-            <p className="text-primary-foreground/80 mt-1">Administrator Operations Guide</p>
+      <Tabs defaultValue="guide" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="guide" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Written Guide
+          </TabsTrigger>
+          <TabsTrigger value="videos" className="gap-2">
+            <PlayCircle className="h-4 w-4" />
+            Video Tutorials
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Video Tutorials Tab */}
+        <TabsContent value="videos" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5 text-primary" />
+                Admin Video Tutorials
+              </CardTitle>
+              <CardDescription>
+                Watch comprehensive guides for administrative operations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <VideoTutorial
+                  title="Admin Dashboard Overview"
+                  description="Navigate the admin dashboard and understand key metrics"
+                  duration="4:30"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Managing Orders"
+                  description="Process, update status, and manage customer orders"
+                  duration="6:15"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="User Management"
+                  description="Assign roles and manage user permissions"
+                  duration="5:00"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Revenue & Transactions"
+                  description="Track payments and generate financial reports"
+                  duration="4:45"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Email Notifications"
+                  description="Configure and monitor automated customer emails"
+                  duration="3:20"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Security Best Practices"
+                  description="Maintain security and handle sensitive data"
+                  duration="5:30"
+                  placeholder
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Written Guide Tab */}
+        <TabsContent value="guide">
+          <ScrollArea className="h-[calc(100vh-300px)]">
+            <div ref={contentRef} className="space-y-6 pr-4">
+              {/* Header for PDF */}
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 rounded-lg text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <ShieldCheck className="h-8 w-8" />
+                </div>
+                <h1 className="text-2xl font-bold">UDC Laundry Service</h1>
+                <p className="text-primary-foreground/80 mt-1">Administrator Operations Guide</p>
           </div>
 
           {/* Section 1: Dashboard Overview */}
@@ -420,8 +493,10 @@ const AdminGuide = () => {
               Emergency Line: <span className="text-primary font-medium">+234 800 ADMIN (23646)</span>
             </p>
           </div>
-        </div>
-      </ScrollArea>
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

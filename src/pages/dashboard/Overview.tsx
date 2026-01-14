@@ -6,6 +6,7 @@ import { Package, Clock, Award, MapPin, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import OnboardingTour from "@/components/OnboardingTour";
 
 const Overview = () => {
   const { user } = useAuth();
@@ -127,6 +128,9 @@ const Overview = () => {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
+      {/* Onboarding Tour for new users */}
+      <OnboardingTour />
+      
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back!</h1>

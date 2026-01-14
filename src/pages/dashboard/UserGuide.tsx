@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VideoTutorial from "@/components/VideoTutorial";
 import { 
   Download, 
   UserPlus, 
@@ -16,7 +18,9 @@ import {
   MapPin,
   Clock,
   CheckCircle,
-  Loader2
+  Loader2,
+  PlayCircle,
+  BookOpen
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 
@@ -69,13 +73,82 @@ const UserGuide = () => {
         </Button>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-200px)]">
-        <div ref={contentRef} className="space-y-6 pr-4">
-          {/* Header for PDF */}
-          <div className="bg-primary text-primary-foreground p-6 rounded-lg text-center">
-            <h1 className="text-2xl font-bold">UDC Laundry Service</h1>
-            <p className="text-primary-foreground/80 mt-1">Complete User Guide</p>
-          </div>
+      <Tabs defaultValue="guide" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="guide" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Written Guide
+          </TabsTrigger>
+          <TabsTrigger value="videos" className="gap-2">
+            <PlayCircle className="h-4 w-4" />
+            Video Tutorials
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Video Tutorials Tab */}
+        <TabsContent value="videos" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5 text-primary" />
+                Video Tutorials
+              </CardTitle>
+              <CardDescription>
+                Watch step-by-step video guides to master UDC Laundry
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <VideoTutorial
+                  title="Getting Started"
+                  description="Learn how to create your account and set up your profile"
+                  duration="3:45"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Creating Your First Order"
+                  description="Step-by-step guide to scheduling a laundry pickup"
+                  duration="5:20"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Tracking Your Order"
+                  description="How to monitor your order status in real-time"
+                  duration="2:15"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Managing Addresses"
+                  description="Add and manage your pickup and delivery locations"
+                  duration="2:45"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Earning & Redeeming Rewards"
+                  description="Maximize your loyalty points and get discounts"
+                  duration="4:10"
+                  placeholder
+                />
+                <VideoTutorial
+                  title="Account Settings"
+                  description="Customize notifications and update your profile"
+                  duration="3:30"
+                  placeholder
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Written Guide Tab */}
+        <TabsContent value="guide">
+          <ScrollArea className="h-[calc(100vh-300px)]">
+            <div ref={contentRef} className="space-y-6 pr-4">
+              {/* Header for PDF */}
+              <div className="bg-primary text-primary-foreground p-6 rounded-lg text-center">
+                <h1 className="text-2xl font-bold">UDC Laundry Service</h1>
+                <p className="text-primary-foreground/80 mt-1">Complete User Guide</p>
+              </div>
 
           {/* Section 1: Registration */}
           <Card>
@@ -395,8 +468,10 @@ const UserGuide = () => {
               Or call us at <span className="text-primary font-medium">+234 800 123 4567</span>
             </p>
           </div>
-        </div>
-      </ScrollArea>
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
