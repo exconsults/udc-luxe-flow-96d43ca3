@@ -152,6 +152,7 @@ export type Database = {
           id: string
           last_name: string | null
           loyalty_points: number
+          onboarding_completed: boolean
           phone: string | null
           referral_code: string | null
           referred_by: string | null
@@ -166,6 +167,7 @@ export type Database = {
           id: string
           last_name?: string | null
           loyalty_points?: number
+          onboarding_completed?: boolean
           phone?: string | null
           referral_code?: string | null
           referred_by?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           loyalty_points?: number
+          onboarding_completed?: boolean
           phone?: string | null
           referral_code?: string | null
           referred_by?: string | null
