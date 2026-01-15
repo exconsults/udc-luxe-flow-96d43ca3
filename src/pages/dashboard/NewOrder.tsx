@@ -5,20 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Package, Sparkles, Shirt, Crown, Check, AlertCircle } from "lucide-react";
+import { Package, Sparkles, Shirt, Crown, Check, AlertCircle, Calendar, Clock, MapPin, CreditCard, Minus, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 
 type ServiceType = "wash_fold" | "dry_cleaning" | "ironing" | "premium";
 
 const services = [
-  { id: "wash_fold" as ServiceType, name: "Wash & Fold", icon: Package, price: 200, description: "Per kg" },
-  { id: "dry_cleaning" as ServiceType, name: "Dry Cleaning", icon: Sparkles, price: 500, description: "Per item" },
-  { id: "ironing" as ServiceType, name: "Ironing", icon: Shirt, price: 150, description: "Per item" },
-  { id: "premium" as ServiceType, name: "Premium", icon: Crown, price: 800, description: "Full service" },
+  { id: "wash_fold" as ServiceType, name: "Wash & Fold", icon: Package, price: 200, description: "Per kg", color: "primary" },
+  { id: "dry_cleaning" as ServiceType, name: "Dry Cleaning", icon: Sparkles, price: 500, description: "Per item", color: "purple" },
+  { id: "ironing" as ServiceType, name: "Ironing", icon: Shirt, price: 150, description: "Per item", color: "blue" },
+  { id: "premium" as ServiceType, name: "Premium", icon: Crown, price: 800, description: "Full service", color: "amber" },
 ];
 
 const NewOrder = () => {
@@ -115,196 +116,331 @@ const NewOrder = () => {
   // Get minimum date (today)
   const today = new Date().toISOString().split('T')[0];
 
+  const incrementCount = () => setItemCount(prev => Math.min(prev + 1, 100));
+  const decrementCount = () => setItemCount(prev => Math.max(prev - 1, 1));
+
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Create New Order</h1>
-        <p className="text-muted-foreground">Schedule your laundry pickup</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto animate-fade-in">
+      {/* Header */}
+      <div className="mb-6 lg:mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Create New Order</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Schedule your laundry pickup and delivery</p>
       </div>
 
       {/* Cash Payment Notice */}
-      <Alert className="border-primary/50 bg-primary/5">
-        <AlertCircle className="h-4 w-4 text-primary" />
-        <AlertDescription className="text-primary">
-          <strong>Cash Payment:</strong> Orders are created as pending. Please pay cash to our staff during pickup. 
-          Once payment is confirmed, admin will approve your order and notify you of the estimated delivery time.
+      <Alert className="mb-6 border-primary/30 bg-primary/5">
+        <CreditCard className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-sm">
+          <span className="font-semibold text-primary">Cash Payment:</span>{' '}
+          <span className="text-foreground">Orders are created as pending. Pay cash during pickup, and admin will approve your order.</span>
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Main Form */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Details</CardTitle>
-              <CardDescription>Fill in your laundry service requirements</CardDescription>
+        <div className="lg:col-span-2 space-y-6">
+          {/* Service Selection */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Select Service
+              </CardTitle>
+              <CardDescription>Choose your laundry service type</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Service Type */}
-                <div className="space-y-2">
-                  <Label>Service Type</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {services.map((service) => (
-                      <button
-                        key={service.id}
-                        type="button"
-                        onClick={() => setSelectedService(service.id)}
-                        className={`p-4 border-2 rounded-lg transition-all text-center relative ${
-                          selectedService === service.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        {selectedService === service.id && (
-                          <div className="absolute top-2 right-2">
-                            <Check className="h-4 w-4 text-primary" />
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {services.map((service) => {
+                  const isSelected = selectedService === service.id;
+                  return (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => setSelectedService(service.id)}
+                      className={`relative p-4 sm:p-5 border-2 rounded-2xl transition-all duration-200 text-left group ${
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-md"
+                          : "border-border hover:border-primary/30 hover:bg-muted/50"
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute top-3 right-3">
+                          <div className="p-1 bg-primary rounded-full">
+                            <Check className="h-3 w-3 text-primary-foreground" />
                           </div>
-                        )}
-                        <service.icon className="h-6 w-6 mx-auto mb-2 text-primary" />
-                        <span className="text-sm font-medium block">{service.name}</span>
-                        <span className="text-xs text-muted-foreground">₦{service.price} {service.description}</span>
-                      </button>
-                    ))}
+                        </div>
+                      )}
+                      <service.icon className={`h-7 w-7 sm:h-8 sm:w-8 mb-3 transition-colors ${
+                        isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                      }`} />
+                      <h3 className={`font-semibold text-sm sm:text-base mb-1 ${
+                        isSelected ? 'text-primary' : 'text-foreground'
+                      }`}>
+                        {service.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        ₦{service.price} {service.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Item Count */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Quantity
+              </CardTitle>
+              <CardDescription>Number of items or kilograms</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center gap-4 sm:gap-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-xl"
+                  onClick={decrementCount}
+                  disabled={itemCount <= 1}
+                >
+                  <Minus className="h-5 w-5" />
+                </Button>
+                <div className="text-center min-w-[100px]">
+                  <span className="text-4xl sm:text-5xl font-bold text-foreground">{itemCount}</span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedService === 'wash_fold' ? 'kg' : 'items'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-xl"
+                  onClick={incrementCount}
+                  disabled={itemCount >= 100}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Schedule */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Schedule
+              </CardTitle>
+              <CardDescription>Set pickup and delivery times</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Pickup */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <div className="p-1.5 bg-secondary/10 rounded-lg">
+                    <MapPin className="h-4 w-4 text-secondary" />
                   </div>
-                </div>
-
-                {/* Item Count */}
-                <div className="space-y-2">
-                  <Label htmlFor="itemCount">Number of Items/Kg</Label>
-                  <Input
-                    id="itemCount"
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={itemCount}
-                    onChange={(e) => setItemCount(Math.max(1, parseInt(e.target.value) || 1))}
-                    required
-                  />
-                </div>
-
-                {/* Pickup Details */}
-                <div className="grid grid-cols-2 gap-4">
+                  Pickup Schedule
+                </Label>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pickupDate">Pickup Date</Label>
+                    <Label htmlFor="pickupDate" className="text-xs text-muted-foreground">Date</Label>
                     <Input
                       id="pickupDate"
                       type="date"
                       min={today}
                       value={pickupDate}
                       onChange={(e) => setPickupDate(e.target.value)}
+                      className="h-11 sm:h-12"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="pickupTime">Pickup Time</Label>
+                    <Label htmlFor="pickupTime" className="text-xs text-muted-foreground">Time</Label>
                     <Input
                       id="pickupTime"
                       type="time"
                       value={pickupTime}
                       onChange={(e) => setPickupTime(e.target.value)}
+                      className="h-11 sm:h-12"
                       required
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Delivery Details */}
-                <div className="grid grid-cols-2 gap-4">
+              <Separator />
+
+              {/* Delivery */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <div className="p-1.5 bg-accent/10 rounded-lg">
+                    <Clock className="h-4 w-4 text-accent" />
+                  </div>
+                  Delivery Schedule
+                </Label>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="deliveryDate">Delivery Date</Label>
+                    <Label htmlFor="deliveryDate" className="text-xs text-muted-foreground">Date</Label>
                     <Input
                       id="deliveryDate"
                       type="date"
                       min={pickupDate || today}
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}
+                      className="h-11 sm:h-12"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="deliveryTime">Delivery Time</Label>
+                    <Label htmlFor="deliveryTime" className="text-xs text-muted-foreground">Time</Label>
                     <Input
                       id="deliveryTime"
                       type="time"
                       value={deliveryTime}
                       onChange={(e) => setDeliveryTime(e.target.value)}
+                      className="h-11 sm:h-12"
                       required
                     />
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                {/* Address Info */}
-                {defaultAddress ? (
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <Label className="text-sm font-medium">Pickup & Delivery Address</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {defaultAddress.street_address}, {defaultAddress.city}, {defaultAddress.state}
-                    </p>
+          {/* Address */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {defaultAddress ? (
+                <div className="p-4 bg-muted/50 rounded-xl border border-border/50">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-secondary/10 rounded-lg">
+                      <MapPin className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{defaultAddress.label}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {defaultAddress.street_address}, {defaultAddress.city}, {defaultAddress.state}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <p className="text-sm text-yellow-600">
-                      No default address set. Please add an address in your profile settings.
-                    </p>
-                  </div>
-                )}
-
-                {/* Special Instructions */}
-                <div className="space-y-2">
-                  <Label htmlFor="instructions">Special Instructions (Optional)</Label>
-                  <Textarea
-                    id="instructions"
-                    placeholder="Any special care instructions..."
-                    rows={4}
-                    value={instructions}
-                    onChange={(e) => setInstructions(e.target.value)}
-                    maxLength={500}
-                  />
                 </div>
+              ) : (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">No default address set</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                        Please add an address in your profile settings.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating Order..." : "Create Order"}
-                </Button>
-              </form>
+          {/* Special Instructions */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Special Instructions</CardTitle>
+              <CardDescription>Any special care requirements (optional)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                placeholder="E.g., Handle delicates with care, separate colors..."
+                rows={4}
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                maxLength={500}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-2 text-right">
+                {instructions.length}/500
+              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Summary Sidebar */}
-        <div>
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Service</span>
-                <span className="font-medium">{selectedServiceData?.name}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Items/Kg</span>
-                <span className="font-medium">{itemCount}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">₦{subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax (7.5%)</span>
-                <span className="font-medium">₦{tax.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Delivery Fee</span>
-                <span className="font-medium">₦{deliveryFee.toLocaleString()}</span>
-              </div>
-              <div className="border-t pt-4">
-                <div className="flex justify-between">
-                  <span className="font-semibold">Total</span>
-                  <span className="font-bold text-lg text-primary">₦{total.toLocaleString()}</span>
+        <div className="lg:col-span-1">
+          <div className="lg:sticky lg:top-6 space-y-6">
+            <Card className="border-0 shadow-lg overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground pb-6">
+                <CardTitle className="text-lg">Order Summary</CardTitle>
+                <CardDescription className="text-primary-foreground/80">Review your order details</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <selectedServiceData.icon className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">{selectedServiceData?.name}</span>
+                  </div>
+                  <span className="font-medium">₦{selectedServiceData?.price}</span>
                 </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Quantity</span>
+                  <span className="font-medium">{itemCount} {selectedService === 'wash_fold' ? 'kg' : 'items'}</span>
+                </div>
+
+                <Separator />
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">₦{subtotal.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Delivery Fee</span>
+                  <span className="font-medium">₦{deliveryFee.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax (7.5%)</span>
+                  <span className="font-medium">₦{tax.toLocaleString()}</span>
+                </div>
+
+                <Separator />
+
+                <div className="flex justify-between items-center pt-2">
+                  <span className="font-semibold text-lg">Total</span>
+                  <span className="font-bold text-2xl text-primary">₦{total.toLocaleString()}</span>
+                </div>
+              </CardContent>
+              <div className="px-6 pb-6">
+                <Button 
+                  onClick={handleSubmit}
+                  className="w-full h-12 sm:h-14 text-base font-semibold shadow-lg hover:shadow-xl transition-all" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                      Creating Order...
+                    </>
+                  ) : (
+                    "Create Order"
+                  )}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-3">
+                  Pay cash during pickup for approval
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
