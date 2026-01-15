@@ -1,16 +1,15 @@
-# Welcome to your Lovable project
+# Welcome to UDC project
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/fd917461-5be0-4730-981e-d9caf165e6d5
-
+**URL**: https://udc-luxe-flow-96d43ca3.vercel.app/
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fd917461-5be0-4730-981e-d9caf165e6d5) and start prompting.
+Simply visit the https://udc-luxe-flow-96d43ca3.vercel.app/ and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 
@@ -62,7 +61,7 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/fd917461-5be0-4730-981e-d9caf165e6d5) and click on Share -> Publish.
+Simply open https://udc-luxe-flow-96d43ca3.vercel.app/ and click on Share -> Publish.
 
 ## Can I connect a custom domain to my Lovable project?
 
@@ -70,4 +69,4 @@ Yes, you can!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Read more here: [Setting up a custom domain](https://udc-luxe-flow-96d43ca3.vercel.app/)
