@@ -234,14 +234,39 @@ const { data, error } = await supabase.auth.signUp({
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    await offlineStorage.clearAuth();
-    syncService.stopAutoSync();
+    try {
+      // Stop sync service first
+      syncService.stopAutoSync();
+      
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+      
+      // Clear offline storage (non-blocking)
+      await offlineStorage.clearAuth().catch((err) => {
+        console.warn("Failed to clear offline auth cache:", err);
+      });
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      }
 
-    toast({
-      title: "Signed out",
-      description: "Come back soon!",
-    });
+      toast({
+        title: "Signed out",
+        description: "Come back soon!",
+      });
+    } catch (err) {
+      console.error('Error during sign out:', err);
+      // Still clear local state even if Supabase fails
+      setUser(null);
+      setSession(null);
+      toast({
+        title: "Signed out",
+        description: "Come back soon!",
+      });
+    }
   };
 
   return (

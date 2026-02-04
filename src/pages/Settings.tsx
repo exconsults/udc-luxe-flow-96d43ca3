@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Bell, Mail, MessageSquare, Moon, Globe, AlertCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, Bell, Mail, MessageSquare, Moon, Globe, AlertCircle, Trash2, Tag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/Navbar";
+import { useServicePrices } from "@/hooks/useServicePrices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,9 @@ const Settings = () => {
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [deleting, setDeleting] = useState(false);
+  
+  // Fetch service prices
+  const { data: servicePrices, isLoading: pricesLoading } = useServicePrices();
 
   useEffect(() => {
     if (!user) {
@@ -380,6 +384,44 @@ const Settings = () => {
                       <SelectItem value="ig">Igbo</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Service Pricing */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5 text-primary" />
+                Service Pricing
+              </CardTitle>
+              <CardDescription>Current prices for our laundry services</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pricesLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-5 w-20" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {servicePrices?.map((price) => (
+                    <div key={price.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-foreground">{price.name}</p>
+                        <p className="text-sm text-muted-foreground">{price.description}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">₦{price.base_price.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{price.price_unit}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
