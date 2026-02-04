@@ -231,6 +231,42 @@ export type Database = {
           },
         ]
       }
+      service_prices: {
+        Row: {
+          base_price: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price_unit: string
+          service_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price_unit?: string
+          service_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_unit?: string
+          service_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sync_queue: {
         Row: {
           action_type: string

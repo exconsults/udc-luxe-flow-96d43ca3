@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,15 +12,17 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useServicePrices } from "@/hooks/useServicePrices";
 
 type ServiceType = "wash_fold" | "dry_cleaning" | "ironing" | "premium";
 
-const services = [
-  { id: "wash_fold" as ServiceType, name: "Wash & Fold", icon: Package, price: 200, description: "Per kg", color: "primary" },
-  { id: "dry_cleaning" as ServiceType, name: "Dry Cleaning", icon: Sparkles, price: 500, description: "Per item", color: "purple" },
-  { id: "ironing" as ServiceType, name: "Ironing", icon: Shirt, price: 150, description: "Per item", color: "blue" },
-  { id: "premium" as ServiceType, name: "Premium", icon: Crown, price: 800, description: "Full service", color: "amber" },
-];
+const serviceIcons: Record<string, any> = {
+  wash_fold: Package,
+  dry_cleaning: Sparkles,
+  ironing: Shirt,
+  premium: Crown,
+};
 
 const NewOrder = () => {
   const { user } = useAuth();
@@ -33,6 +35,9 @@ const NewOrder = () => {
   const [deliveryTime, setDeliveryTime] = useState("");
   const [instructions, setInstructions] = useState("");
   const [itemCount, setItemCount] = useState(1);
+
+  // Fetch service prices from database
+  const { data: servicePrices, isLoading: pricesLoading } = useServicePrices();
 
   // Fetch user's default address
   const { data: defaultAddress } = useQuery({
@@ -51,6 +56,19 @@ const NewOrder = () => {
     },
     enabled: !!user
   });
+
+  // Build services array from database prices
+  const services = useMemo(() => {
+    if (!servicePrices) return [];
+    return servicePrices.map(sp => ({
+      id: sp.service_type as ServiceType,
+      name: sp.name,
+      icon: serviceIcons[sp.service_type] || Package,
+      price: sp.base_price,
+      description: sp.price_unit.replace('per ', 'Per '),
+      color: sp.service_type === 'premium' ? 'amber' : sp.service_type === 'dry_cleaning' ? 'purple' : sp.service_type === 'ironing' ? 'blue' : 'primary',
+    }));
+  }, [servicePrices]);
 
   const selectedServiceData = services.find(s => s.id === selectedService);
   const subtotal = (selectedServiceData?.price || 0) * itemCount;
@@ -149,42 +167,50 @@ const NewOrder = () => {
               <CardDescription>Choose your laundry service type</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {services.map((service) => {
-                  const isSelected = selectedService === service.id;
-                  return (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => setSelectedService(service.id)}
-                      className={`relative p-4 sm:p-5 border-2 rounded-2xl transition-all duration-200 text-left group ${
-                        isSelected
-                          ? "border-primary bg-primary/5 shadow-md"
-                          : "border-border hover:border-primary/30 hover:bg-muted/50"
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-3 right-3">
-                          <div className="p-1 bg-primary rounded-full">
-                            <Check className="h-3 w-3 text-primary-foreground" />
+              {pricesLoading ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton key={index} className="h-32 rounded-2xl" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {services.map((service) => {
+                    const isSelected = selectedService === service.id;
+                    return (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => setSelectedService(service.id)}
+                        className={`relative p-4 sm:p-5 border-2 rounded-2xl transition-all duration-200 text-left group ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-border hover:border-primary/30 hover:bg-muted/50"
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-3 right-3">
+                            <div className="p-1 bg-primary rounded-full">
+                              <Check className="h-3 w-3 text-primary-foreground" />
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      <service.icon className={`h-7 w-7 sm:h-8 sm:w-8 mb-3 transition-colors ${
-                        isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                      }`} />
-                      <h3 className={`font-semibold text-sm sm:text-base mb-1 ${
-                        isSelected ? 'text-primary' : 'text-foreground'
-                      }`}>
-                        {service.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        ₦{service.price} {service.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
+                        )}
+                        <service.icon className={`h-7 w-7 sm:h-8 sm:w-8 mb-3 transition-colors ${
+                          isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                        }`} />
+                        <h3 className={`font-semibold text-sm sm:text-base mb-1 ${
+                          isSelected ? 'text-primary' : 'text-foreground'
+                        }`}>
+                          {service.name}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          ₦{service.price.toLocaleString()} {service.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 

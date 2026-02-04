@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { useAllServicePrices, useUpdateServicePrice } from '@/hooks/useServicePrices';
 import { 
   Users, 
   Package, 
@@ -26,7 +27,9 @@ import {
   ArrowLeft,
   RefreshCw,
   CheckCircle,
-  Clock
+  Clock,
+  Tag,
+  Save
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -68,6 +71,13 @@ const AdminDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [estimatedDelivery, setEstimatedDelivery] = useState('');
   const [staffNotes, setStaffNotes] = useState('');
+  
+  // Pricing edit state
+  const [editingPrices, setEditingPrices] = useState<Record<string, number>>({});
+  
+  // Fetch service prices
+  const { data: servicePrices, isLoading: pricesLoading } = useAllServicePrices();
+  const updatePriceMutation = useUpdateServicePrice();
 
   useEffect(() => {
     if (!authLoading && !adminLoading) {
@@ -723,6 +733,103 @@ const AdminDashboard = () => {
                                 onClick={() => handleRemoveRole(userItem.id)}
                               >
                                 Remove
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Service Pricing Management */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle>Service Pricing</CardTitle>
+                <CardDescription>Manage service prices displayed to customers</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {pricesLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Price (₦)</TableHead>
+                      <TableHead>Unit</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {servicePrices?.map(price => {
+                      const isEditing = editingPrices[price.id] !== undefined;
+                      const currentValue = isEditing ? editingPrices[price.id] : price.base_price;
+                      
+                      return (
+                        <TableRow key={price.id}>
+                          <TableCell className="font-medium">{price.name}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {price.description || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="50"
+                              value={currentValue}
+                              onChange={(e) => setEditingPrices(prev => ({
+                                ...prev,
+                                [price.id]: Number(e.target.value)
+                              }))}
+                              className="w-24 h-8"
+                            />
+                          </TableCell>
+                          <TableCell className="text-sm capitalize">{price.price_unit}</TableCell>
+                          <TableCell>
+                            <Badge variant={price.is_active ? "default" : "secondary"}>
+                              {price.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {isEditing && editingPrices[price.id] !== price.base_price && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  updatePriceMutation.mutate(
+                                    { id: price.id, updates: { base_price: editingPrices[price.id] } },
+                                    {
+                                      onSuccess: () => {
+                                        toast.success(`${price.name} price updated to ₦${editingPrices[price.id]}`);
+                                        setEditingPrices(prev => {
+                                          const { [price.id]: _, ...rest } = prev;
+                                          return rest;
+                                        });
+                                      },
+                                      onError: () => {
+                                        toast.error('Failed to update price');
+                                      }
+                                    }
+                                  );
+                                }}
+                                disabled={updatePriceMutation.isPending}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Save
                               </Button>
                             )}
                           </TableCell>
