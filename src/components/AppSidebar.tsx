@@ -35,7 +35,7 @@ const navItems = [
 
 export function AppSidebar() {
   const { signOut } = useAuth();
-  const { isAdmin } = useAdminCheck();
+  const { isAdmin, isLoading: isAdminLoading } = useAdminCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -89,47 +89,61 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Admin Section */}
-        {isAdmin && (
+        {(isAdmin || isAdminLoading) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-amber-600 dark:text-amber-400 font-bold uppercase text-xs tracking-wider">
+            <SidebarGroupLabel
+              className={
+                isAdmin
+                  ? "text-amber-600 dark:text-amber-400 font-bold uppercase text-xs tracking-wider"
+                  : undefined
+              }
+            >
               Admin Access
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/admin"
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
-                          isActive
-                            ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30"
-                            : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/30"
-                        }`
-                      }
-                    >
-                      <ShieldCheck className="h-5 w-5 shrink-0" />
-                      <span>Admin Panel</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/admin/guide"
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                        }`
-                      }
-                    >
-                      <BookOpen className="h-5 w-5 shrink-0" />
-                      <span>Admin Guide</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {isAdmin ? (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to="/admin"
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
+                              isActive
+                                ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30"
+                                : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/30"
+                            }`
+                          }
+                        >
+                          <ShieldCheck className="h-5 w-5 shrink-0" />
+                          <span>Admin Panel</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to="/admin/guide"
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                              isActive
+                                ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                            }`
+                          }
+                        >
+                          <BookOpen className="h-5 w-5 shrink-0" />
+                          <span>Admin Guide</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
+                ) : (
+                  <div className="px-3 py-2 text-xs text-muted-foreground">
+                    Checking admin access…
+                  </div>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
