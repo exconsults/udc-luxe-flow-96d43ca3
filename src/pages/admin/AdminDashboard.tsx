@@ -79,12 +79,13 @@ const AdminDashboard = () => {
   const { data: servicePrices, isLoading: pricesLoading } = useAllServicePrices();
   const updatePriceMutation = useUpdateServicePrice();
 
+  // Redirect handled by AdminLayout - just check access for rendering
   useEffect(() => {
     if (!authLoading && !adminLoading) {
       if (!user) {
-        navigate('/auth');
+        navigate('/admin/login');
       } else if (!isAdmin) {
-        navigate('/dashboard');
+        navigate('/admin/login');
       }
     }
   }, [user, isAdmin, authLoading, adminLoading, navigate]);
@@ -431,27 +432,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-            </Link>
-            <ShieldCheck className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage users and orders</p>
-            </div>
-          </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
-            Admin
-          </Badge>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
@@ -842,7 +823,7 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
-      </main>
+      
 
       {/* Role Assignment Dialog */}
       <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
