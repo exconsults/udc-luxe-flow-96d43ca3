@@ -1,7 +1,10 @@
-import { useEffect } from "react";
-import { Outlet, useNavigate, Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { supabase } from "@/integrations/supabase/client";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,26 +17,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   ShieldCheck, 
-  Users, 
-  Package, 
-  Tag, 
   Settings, 
   LogOut, 
-  BookOpen,
-  LayoutDashboard,
-  ArrowLeft
+  User,
+  Bell
 } from "lucide-react";
-import udcLogo from "@/assets/udc-logo.png";
-
-const adminNavItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Admin Guide", url: "/admin/guide", icon: BookOpen },
-];
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export function AdminLayout() {
   const { user, signOut, isLoading: authLoading } = useAuth();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !adminLoading) {
@@ -45,17 +41,46 @@ export function AdminLayout() {
     }
   }, [user, isAdmin, authLoading, adminLoading, navigate]);
 
+  // Load profile
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (data) setProfile(data);
+    };
+    
+    loadProfile();
+  }, [user]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const getInitials = () => {
+    if (!profile) return "A";
+    const first = profile.first_name?.charAt(0) || "";
+    const last = profile.last_name?.charAt(0) || "";
+    return `${first}${last}`.toUpperCase() || "A";
   };
 
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Skeleton className="h-12 w-12 rounded-full mx-auto" />
-          <Skeleton className="h-4 w-32 mx-auto" />
+          <div className="relative">
+            <Skeleton className="h-16 w-16 rounded-full mx-auto" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ShieldCheck className="h-8 w-8 text-amber-500 animate-pulse" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-40 mx-auto" />
           <p className="text-sm text-muted-foreground">Verifying admin access...</p>
         </div>
       </div>
@@ -67,129 +92,88 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Admin Header */}
-      <header className="h-16 border-b border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-orange-500/5 sticky top-0 z-40">
-        <div className="container mx-auto h-full px-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* Logo */}
-            <Link to="/admin" className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg">
-                <ShieldCheck className="h-5 w-5 text-white" />
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AdminSidebar />
+        
+        <div className="flex-1 flex flex-col w-full">
+          {/* Top Header */}
+          <header className="h-16 border-b border-amber-500/20 bg-gradient-to-r from-card via-card to-amber-500/5 sticky top-0 z-40 flex items-center justify-between px-6">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <div className="hidden sm:flex items-center gap-2">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                  <ShieldCheck className="h-3 w-3 mr-1" />
+                  Admin Mode
+                </Badge>
               </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold text-foreground">UDC Admin</span>
-                <span className="text-xs text-muted-foreground">Management Portal</span>
-              </div>
-            </Link>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* Notifications */}
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-amber-500 rounded-full text-[10px] text-white flex items-center justify-center font-medium">
+                  3
+                </span>
+              </Button>
 
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center gap-1 ml-8">
-              {adminNavItems.map((item) => (
-                <NavLink
-                  key={item.title}
-                  to={item.url}
-                  end={item.url === "/admin"}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-amber-500/10 text-amber-600"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`
-                  }
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.title}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Back to Customer Dashboard */}
-            <Link 
-              to="/dashboard" 
-              className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Customer Dashboard
-            </Link>
-
-            {/* Admin Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                  <div className="text-right hidden sm:block">
-                    <div className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <span>{user?.email?.split('@')[0] || 'Admin'}</span>
-                      <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 text-xs rounded-full font-semibold">
-                        ADMIN
-                      </span>
+              {/* Admin Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div className="text-right hidden sm:block">
+                      <div className="text-sm font-medium text-foreground">
+                        {profile?.first_name && profile?.last_name 
+                          ? `${profile.first_name} ${profile.last_name}`
+                          : user?.email?.split('@')[0] || 'Admin'}
+                      </div>
+                      <div className="text-xs text-amber-600 font-medium">Administrator</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">{user?.email}</div>
-                  </div>
-                  <Avatar className="h-10 w-10 border-2 border-amber-500/30">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-500 text-white">
-                      A
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                  <Package className="mr-2 h-4 w-4" />
-                  Customer Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                    <Avatar className="h-10 w-10 border-2 border-amber-500/30">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-500 text-white font-semibold">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.email}</p>
+                      <p className="text-xs leading-none text-amber-600">Administrator</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Customer Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto bg-muted/30">
+            <Outlet />
+          </main>
         </div>
-      </header>
-
-      {/* Mobile Navigation */}
-      <nav className="md:hidden border-b border-border bg-card px-4 py-2 flex gap-2 overflow-x-auto">
-        {adminNavItems.map((item) => (
-          <NavLink
-            key={item.title}
-            to={item.url}
-            end={item.url === "/admin"}
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                isActive
-                  ? "bg-amber-500/10 text-amber-600"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`
-            }
-          >
-            <item.icon className="h-4 w-4" />
-            {item.title}
-          </NavLink>
-        ))}
-        <Link 
-          to="/dashboard" 
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Customer
-        </Link>
-      </nav>
-
-      {/* Main Content */}
-      <main>
-        <Outlet />
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
