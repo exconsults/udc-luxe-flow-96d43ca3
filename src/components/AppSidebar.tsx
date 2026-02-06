@@ -6,7 +6,8 @@ import {
   Award, 
   Settings,
   LogOut,
-  BookOpen
+  BookOpen,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,6 +28,8 @@ const navItems = [
   { title: "New Order", url: "/dashboard/new-order", icon: PlusCircle },
   { title: "My Orders", url: "/dashboard/history", icon: History },
   { title: "Rewards", url: "/dashboard/rewards", icon: Award },
+  { title: "Profile", url: "/profile", icon: User },
+  { title: "Settings", url: "/settings", icon: Settings },
   { title: "User Guide", url: "/dashboard/guide", icon: BookOpen },
 ];
 
