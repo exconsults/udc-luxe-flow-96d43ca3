@@ -7,7 +7,7 @@ import {
   Settings,
   LogOut,
   BookOpen,
-  User
+  User,
 } from "lucide-react";
 import {
   Sidebar,
@@ -85,28 +85,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Settings & Logout */}
+        {/* Logout */}
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/settings"
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      }`
-                    }
-                  >
-                    <Settings className="h-5 w-5 shrink-0" />
-                    <span>Settings</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button
