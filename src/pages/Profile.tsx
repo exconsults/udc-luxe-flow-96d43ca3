@@ -8,11 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, MapPin, Trash2, Plus, ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Upload, MapPin, Trash2, Plus, User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import Navbar from "@/components/Navbar";
+
 
 interface Address {
   id: string;
@@ -508,17 +508,8 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-8 mt-16">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/dashboard')}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">Profile Settings</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Info */}

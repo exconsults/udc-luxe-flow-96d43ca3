@@ -46,9 +46,9 @@ const App = () => (
             <Route path="track/:orderId" element={<OrderTracking />} />
             <Route path="rewards" element={<Rewards />} />
             <Route path="guide" element={<UserGuide />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
           <Route path="/services" element={<Services />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />
