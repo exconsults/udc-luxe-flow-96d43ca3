@@ -16,20 +16,20 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, User, LogOut, Settings, Shield, X } from "lucide-react";
+import { Menu, User, LogOut, Settings, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import udcLogo from "@/assets/udc-logo.png";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
+
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAdmin } = useAdminCheck();
+  
 
   useEffect(() => {
     if (user) {
@@ -94,12 +94,6 @@ const Navbar = () => {
               Pricing
             </Link>
             
-            {isAdmin && (
-              <Link to="/admin" className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                <Shield className="h-4 w-4" />
-                Admin
-              </Link>
-            )}
             
             {user ? (
               <DropdownMenu>
@@ -211,16 +205,6 @@ const Navbar = () => {
                     Pricing
                   </button>
 
-                  {/* Admin Link - Only visible to admins */}
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleMobileNavigation('/admin')}
-                      className="flex items-center gap-3 p-3 text-left text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium"
-                    >
-                      <Shield className="h-5 w-5" />
-                      Admin Panel
-                    </button>
-                  )}
                 </div>
 
                 {/* Divider */}

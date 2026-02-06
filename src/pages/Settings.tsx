@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Bell, Mail, MessageSquare, Moon, Globe, AlertCircle, Trash2, Tag } from "lucide-react";
+import { Bell, Mail, MessageSquare, Moon, Globe, AlertCircle, Trash2, Tag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import Navbar from "@/components/Navbar";
+
 import { useServicePrices } from "@/hooks/useServicePrices";
 import {
   AlertDialog,
@@ -174,14 +174,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <div className="container mx-auto px-4 py-8 mt-16">
-        <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Settings</h1>
