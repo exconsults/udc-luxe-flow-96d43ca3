@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, Settings, LogOut } from "lucide-react";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export function DashboardLayout() {
   const { user, signOut, isLoading } = useAuth();
@@ -93,54 +94,58 @@ export function DashboardLayout() {
         <div className="flex-1 flex flex-col w-full">
           {/* Top Header */}
           <header className="h-16 border-b border-border bg-card sticky top-0 z-40 flex items-center justify-between px-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <SidebarTrigger />
               <NetworkStatusIndicator />
             </div>
             
-            {/* User Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                  <div className="text-right hidden sm:block">
-                    <div className="text-sm font-medium text-foreground">
-                      {profile?.first_name && profile?.last_name 
-                        ? `${profile.first_name} ${profile.last_name}`
-                        : user?.email?.split('@')[0] || 'Account'}
+            <div className="flex items-center gap-2">
+              <NotificationDropdown />
+            
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div className="text-right hidden sm:block">
+                      <div className="text-sm font-medium text-foreground">
+                        {profile?.first_name && profile?.last_name 
+                          ? `${profile.first_name} ${profile.last_name}`
+                          : user?.email?.split('@')[0] || 'Account'}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2">
+                        <span>{user?.email}</span>
+                        {profile?.loyalty_points > 0 && (
+                          <span className="text-primary font-medium">• {profile.loyalty_points} pts</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>{user?.email}</span>
-                      {profile?.loyalty_points > 0 && (
-                        <span className="text-primary font-medium">• {profile.loyalty_points} pts</span>
-                      )}
-                    </div>
-                  </div>
-                  <Avatar className="h-10 w-10 border-2 border-primary/20">
-                    <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <Avatar className="h-10 w-10 border-2 border-primary/20">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </header>
 
           {/* Main Content */}
